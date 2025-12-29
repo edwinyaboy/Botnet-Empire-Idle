@@ -659,6 +659,7 @@ let game = JSON.parse(localStorage.getItem(SAVE_KEY)) || {
   upgrades:{},
   prices:null,
   priceTime:0,
+  lastSaveTime: 0,
   achievements:{},
   moneyGraph:[],
   unlocks:{ mobile:false },
@@ -817,7 +818,6 @@ function showTutorial(){
           <ul>
             <li><strong>Bot Generation Tools:</strong> SQL Injection Module, XSS Kit, Credential Harvester, etc. - generate bots passively.</li>
             <li><strong>Money Generation Tools:</strong> DDoS Platform, Card Dumper, Ransomware - generate income passively.</li>
-            <li><strong>Tool Automation:</strong> Tools are OFF by default. Activate them for 50% efficiency (in Device Exploitation panel).</li>
             <li><strong>Clickable Tools:</strong> Some tools (SQLi, DDoS, Ransomware, Zero-Day) have bonus click actions. Click 50 times then 5-minute cooldown.</li>
           </ul>
           
@@ -857,6 +857,9 @@ function closeTutorial(){
 function safeInt(n){
   return Math.floor(n + 1e-9);
 }
+
+document.getElementById("bps").textContent = safeInt(bps);
+document.getElementById("mps").textContent = safeInt(mps);
 
 function rollPrices(){
   const oldPrices = game.prices;
@@ -911,11 +914,11 @@ function getPrestigeBonus(){
 
 function startSpread(){
   if(!spreadHeld){
-    spread();
+    spread(); // Initial click
     spreadHeld = true;
     spreadInterval = setInterval(() => {
-      game.bots.t3 += 5;
-    }, 1000);
+      spread(); // Call spread() instead of directly adding T3
+    }, 200); // Every 200ms instead of 1000ms for better responsiveness
   }
 }
 
@@ -967,6 +970,7 @@ function sell(tier, amount){
     const earned = amount * game.prices[tier] * priceBonus * prestigeBonus * achievementBonus;
     game.money += earned;
     game.totalEarned += earned;
+	saveGame();
   }
 }
 
@@ -1007,6 +1011,8 @@ function buyUpgrade(id){
       purchaseInProgress = true;
       game.money -= cost;
       game.skills[id]++;
+	  
+	  saveGame();
       
       // Update UI immediately
       marketplaceDirty = true;
@@ -1042,24 +1048,188 @@ function buyUpgrade(id){
 
 function buyTool(id){
   if(purchaseInProgress) return;
+
   const t = tools[id];
   if(!t || game.tools[id]) return;
 
   if(game.money >= t.cost){
     purchaseInProgress = true;
     game.money -= t.cost;
-    game.tools[id] = { active:false, clicks:0 };
-
-    if(t.unlocks === "mobile") game.unlocks.mobile = true;
-    if(!game.activeToolTab && t.type) game.activeToolTab = id;
-
-    // Mark for re-render
+    
+    // Initialize tool as active
+    game.tools[id] = { active: true, clicks: 0 };
+    
+    // Force UI updates
     marketplaceDirty = true;
     upgradesDirty = true;
+    lastToolsState = ""; // Force tools interface refresh
+    
+    // Immediate UI feedback
+    render();
+    
+    setTimeout(() => {
+      purchaseInProgress = false;
+    }, 100);
+  }
+}
 
+function activateTool(id) {
+  if(game.tools[id]) {
+    game.tools[id].active = !game.tools[id].active;
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  saveGame();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) {
+    saveGame();
+  }
+});
+
+window.addEventListener("load", () => {
+  // Try to load from localStorage first
+  const saved = localStorage.getItem(SAVE_KEY);
+  if(saved){
+    try {
+      const parsed = JSON.parse(saved);
+      // Merge with default game structure to ensure all properties exist
+      game = {
+        ...game, // Default structure
+        ...parsed, // Saved data
+        // Ensure critical properties exist
+        bots: parsed.bots || game.bots,
+        money: parsed.money || 0,
+        prestige: parsed.prestige || 0,
+        skills: parsed.skills || { tiers:0, prices:0, generation:0, automation:0 },
+        tools: parsed.tools || {},
+        upgrades: parsed.upgrades || {},
+        achievements: parsed.achievements || {},
+        unlocks: parsed.unlocks || { mobile:false }
+      };
+      
+      // Ensure moneyGraph exists
+      if(!Array.isArray(game.moneyGraph)) game.moneyGraph = [];
+      
+      console.log("Game loaded from save");
+    } catch(e) {
+      console.error("Error loading save:", e);
+      // Keep default game
+    }
+  }
+  
+  // Initialize with current time
+  game.lastTick = Date.now();
+  if(!game.lastGraphSample) game.lastGraphSample = Date.now();
+  
+  // Ensure prices exist
+  if(!game.prices || Date.now()-game.priceTime>1800000) rollPrices();
+  
+  render();
+  drawCharts();
+  
+  // Start the game loop
+  setInterval(update, 100);
+  update();
+});
+
+function saveGame() {
+  try {
+    // Update timestamp before saving
+    game.lastTick = Date.now();
+    
+    // Stringify with error handling
+    const saveData = JSON.stringify(game);
+    localStorage.setItem(SAVE_KEY, saveData);
+    
+    // Optional: Log success (remove in production)
+    console.log("Game saved successfully");
+  } catch(e) {
+    console.error("Error saving game:", e);
+  }
+}
+
+function update(){
+  const now = Date.now();
+  const delta = Math.min((now - game.lastTick) / 1000, 1);
+  game.lastTick = now;
+  
+  let botMult = 1 + game.skills.generation * 0.05 + game.skills.automation * 0.05 + getPrestigeBonus() * 0.10;
+  let moneyMult = 1 + getPrestigeBonus() * 0.10;
+  
+  botMult *= getAchievementBonus("generation");
+  botMult *= getAchievementBonus("automation");
+  moneyMult *= getAchievementBonus("income");
+  
+  if(game.activeEvent === "raid" && game.eventAcknowledged) botMult *= 0.7;
+  if(game.activeEvent === "outage" && game.eventAcknowledged) moneyMult *= 0.5;
+  if(game.activeEvent === "boom" && game.eventAcknowledged) botMult *= 2;
+  
+  if(game.upgrades.buildPC){
+    game.bots.t3 += 1 * botMult * delta;
+  }
+  
+  for(const id in game.tools){
+    const t = tools[id];
+    if(!t || !t.type) continue;
+    const active = game.tools[id].active ? 0.5 : 0;
+    if(t.type === "bots"){
+      game.bots.t3 += t.base * active * botMult * delta;
+    } else if(t.type === "money"){
+      const earned = t.base * active * moneyMult * delta;
+      game.money += earned;
+      game.totalEarned += earned;
+    }
+  }
+  
+  for(const id in game.clickCooldowns){
+    if(game.clickCooldowns[id] > 0){
+      game.clickCooldowns[id] -= delta;
+      if(game.clickCooldowns[id] < 0) game.clickCooldowns[id] = 0;
+    }
+  }
+  
+  if(now - game.lastGraphSample >= GRAPH_SAMPLE_INTERVAL){
+    game.moneyGraph.push(game.totalEarned);
+    if(game.moneyGraph.length > GRAPH_MAX_POINTS) game.moneyGraph.shift();
+    game.lastGraphSample = now;
+  }
+  
+  let priceRollTime = 1800000;
+  
+  if(Date.now() - game.priceTime > priceRollTime) rollPrices();
+  
+  // Save every 5 seconds AND on important events
+  if(!game.lastSaveTime || now - game.lastSaveTime > 5000) {
+    saveGame();
+    game.lastSaveTime = now;
+  }
+  
+  triggerEvent();
+  drawCharts();
+  render();
+}
+
+// Also save on important actions:
+function buyTool(id){
+  if(purchaseInProgress) return;
+
+  const t = tools[id];
+  if(!t || game.tools[id]) return;
+
+  if(game.money >= t.cost){
+    purchaseInProgress = true;
+    game.money -= t.cost;
+    game.tools[id] = { active:true, clicks:0 };
+    
+    // Save immediately after purchase
+    saveGame();
+    
     setTimeout(() => { 
       purchaseInProgress = false;
-      render(); // Force full render to update button states
+      render();
     }, 100);
   }
 }
@@ -1109,6 +1279,8 @@ function upgrade(skill){
     purchaseInProgress = true;
     game.money -= cost;
     game.skills[skill]++;
+	
+	saveGame();
     
     // Update UI immediately
     marketplaceDirty = true;
@@ -1202,62 +1374,6 @@ function triggerEvent(){
     
     showEvent(event);
   }
-}
-
-function update(){
-  const now = Date.now();
-  const delta = Math.min((now - game.lastTick) / 1000, 1);
-  game.lastTick = now;
-  
-  let botMult = 1 + game.skills.generation * 0.05 + game.skills.automation * 0.05 + getPrestigeBonus() * 0.10;
-  let moneyMult = 1 + getPrestigeBonus() * 0.10;
-  
-  botMult *= getAchievementBonus("generation");
-  botMult *= getAchievementBonus("automation");
-  moneyMult *= getAchievementBonus("income");
-  
-  if(game.activeEvent === "raid" && game.eventAcknowledged) botMult *= 0.7;
-  if(game.activeEvent === "outage" && game.eventAcknowledged) moneyMult *= 0.5;
-  if(game.activeEvent === "boom" && game.eventAcknowledged) botMult *= 2;
-  
-  if(game.upgrades.buildPC){
-    game.bots.t3 += 1 * botMult * delta;
-  }
-  
-  for(const id in game.tools){
-    const t = tools[id];
-    if(!t || !t.type) continue;
-    const active = game.tools[id].active ? 0.5 : 0;
-    if(t.type === "bots"){
-      game.bots.t3 += t.base * active * botMult * delta;
-    } else if(t.type === "money"){
-      const earned = t.base * active * moneyMult * delta;
-      game.money += earned;
-      game.totalEarned += earned;
-    }
-  }
-  
-  for(const id in game.clickCooldowns){
-    if(game.clickCooldowns[id] > 0){
-      game.clickCooldowns[id] -= delta;
-      if(game.clickCooldowns[id] < 0) game.clickCooldowns[id] = 0;
-    }
-  }
-  
-  if(now - game.lastGraphSample >= GRAPH_SAMPLE_INTERVAL){
-    game.moneyGraph.push(game.totalEarned);
-    if(game.moneyGraph.length > GRAPH_MAX_POINTS) game.moneyGraph.shift();
-    game.lastGraphSample = now;
-  }
-  
-  let priceRollTime = 1800000;
-  
-  if(Date.now() - game.priceTime > priceRollTime) rollPrices();
-  
-  triggerEvent();
-  drawCharts();
-  render();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
 }
 
 function updateSellButtonStates(){
@@ -1481,42 +1597,36 @@ function renderUpgrades(){
 function renderMarketplace(){
   const market = document.getElementById("market");
   if(!market) return;
-  
+
   market.innerHTML = "";
   const sortedTools = Object.keys(tools).sort((a, b) => tools[a].cost - tools[b].cost);
-  
+
   for(const id of sortedTools){
     const t = tools[id];
     const owned = game.tools[id];
     const affordable = game.money >= t.cost && !purchaseInProgress;
-    
+
     let html = `<div class="tool-card">
       <div class="tool-header">
         <div class="tool-name">${t.name}</div>
-        ${owned?`<div class="tool-status ${owned.active?'active':''}">
-          ${owned.active?'ACTIVE (50%)':'INACTIVE'}
-        </div>`:''}
+        ${owned ? `<div class="tool-status active">PURCHASED</div>` : ''}
       </div>
       <div class="tool-desc">${t.desc}`;
-    
+
     if(t.type === "bots") html += ` - ${t.base} bots/sec`;
     if(t.type === "money") html += ` - $${t.base}/sec`;
     if(t.clickable) html += ` - Clickable`;
     if(t.unlocks === "mobile") html += ` - Unlocks Mobile Infrastructure`;
-    
+
     html += `</div>`;
-    
+
+    // Show purchase button only if not owned
     if(!owned){
       html += `<button onclick="buyTool('${id}')" ${!affordable?'disabled':''}>
         Purchase - $${t.cost.toLocaleString()}
       </button>`;
-    } else {
-      // Show activate/deactivate button for owned tools
-      html += `<button onclick="toggleTool('${id}')" class="${owned.active?'active':''}">
-        ${owned.active?'Deactivate':'Activate'} (${owned.active?'0%':'50%'} efficiency)
-      </button>`;
     }
-    
+
     html += `</div>`;
     market.innerHTML += html;
   }
@@ -1588,7 +1698,9 @@ function renderAchievements(){
 function renderToolsInterface(){
   const toolsUI = document.getElementById("toolsInterface");
   
-  const ownedTools = Object.keys(game.tools).filter(id => tools[id] && t.type);
+  const ownedTools = Object.keys(game.tools).filter(id => {
+    return game.tools[id] !== undefined; // Simple check
+  });
   
   if(ownedTools.length === 0){
     toolsUI.innerHTML = `<div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; padding:10px; text-align:center;">Purchase tools from marketplace to use here</div>`;
@@ -1632,7 +1744,10 @@ function renderToolsInterface(){
 }
 
 function updateToolsInterfaceDynamic(){
-  const ownedTools = Object.keys(game.tools).filter(id => tools[id] && t.type);
+  const ownedTools = Object.keys(game.tools).filter(id => {
+    const t = tools[id];
+    return t && t.type;
+  });
   
   ownedTools.forEach(id => {
     const t = tools[id];
@@ -1658,7 +1773,7 @@ function updateToolsInterfaceDynamic(){
       if(cooldownBar && cooldownFill){
         if(cd > 0){
           cooldownBar.style.display = '';
-          cooldownFill.style.width = ((1-cd/(t.clickCooldown * getCooldownReduction()))*100) + '%';
+          cooldownFill.style.width = ((1 - cd / (t.clickCooldown * getCooldownReduction())) * 100) + '%';
         } else {
           cooldownBar.style.display = 'none';
         }
@@ -1666,6 +1781,7 @@ function updateToolsInterfaceDynamic(){
     }
   });
 }
+
 
 function drawCharts(){
   drawPieChart();
@@ -1727,7 +1843,9 @@ function drawPieChart(){
     {label:"T2", value:game.bots.t2, color:"#58a6ff", fullLabel:"T2 Standard"},
     {label:"T3", value:game.bots.t3, color:"#f85149", fullLabel:"T3 Basic"}
   ];
-  if(game.unlocks.mobile) data.push({label:"Mobile", value:game.bots.mobile, color:"#ffc107", fullLabel:"Mobile"});
+  if(game.unlocks.mobile && game.bots.mobile > 0) {
+    data.push({label:"Mobile", value:game.bots.mobile, color:"#ffc107", fullLabel:"Mobile"});
+  }
 
   let currentAngle = -Math.PI / 2;
 
@@ -1907,8 +2025,15 @@ function importSave(){
   if(data){
     try {
       const imported = JSON.parse(atob(data));
-      if(imported && typeof imported.bots === 'object' && typeof imported.money === 'number'){
-        game = imported;
+      // Better validation
+      if(imported && 
+         typeof imported === 'object' &&
+         imported.bots && 
+         typeof imported.bots.t3 !== 'undefined' &&
+         typeof imported.money === 'number'){
+        
+        // Merge with existing game structure
+        game = { ...game, ...imported };
         localStorage.setItem(SAVE_KEY, JSON.stringify(game));
         alert("Save data imported successfully");
         location.reload();
@@ -1916,7 +2041,8 @@ function importSave(){
         alert("Invalid save data format");
       }
     } catch(e) {
-      alert("Invalid save data");
+      console.error("Import error:", e);
+      alert("Invalid save data format");
     }
   }
 }
@@ -1924,6 +2050,27 @@ function importSave(){
 function resetGame(){
   localStorage.removeItem(SAVE_KEY);
   location.reload();
+}
+
+function debugLocalStorage() {
+  console.log("=== DEBUG ===");
+  console.log("SAVE_KEY:", SAVE_KEY);
+  console.log("Has save in localStorage?", localStorage.getItem(SAVE_KEY) ? "YES" : "NO");
+  
+  const saved = localStorage.getItem(SAVE_KEY);
+  if(saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      console.log("Save contains money:", parsed.money);
+      console.log("Save contains bots.t3:", parsed.bots?.t3);
+      console.log("Save timestamp:", new Date(parsed.lastTick));
+    } catch(e) {
+      console.error("Parse error:", e);
+    }
+  }
+  
+  console.log("Current game money:", game.money);
+  console.log("Current game bots:", game.bots);
 }
 
 const spreadBtn = document.getElementById('spreadBtn');
@@ -1941,6 +2088,10 @@ spreadBtn.addEventListener('touchend', (e) => {
 
 setInterval(update, 100);
 update();
+
+if(!Array.isArray(game.moneyGraph)) {
+  game.moneyGraph = [];
+}
 
 let resizeTimeout;
 window.addEventListener('resize', () => {
