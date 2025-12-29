@@ -704,17 +704,17 @@ const upgrades = {
 };
 
 const tools = {
-  starter:{ name:"Wireless Deauthentication Tool", desc:"Forces nearby clients to disconnect from poorly secured access points", cost:1000, type:"bots", base:10, clickable:true, clickBonus:50, clickCooldown:60 },
+  starter:{ name:"Deauthentication Tool", desc:"Forces nearby wireless clients to disconnect from poorly secured access points", cost:1000, type:"bots", base:10, clickable:true, clickBonus:50, clickCooldown:60 },
   miniWorm:{ name:"Basic Propagation Script", desc:"A simple automated script that repeats successful intrusions without user input", cost:1500, type:"bots", base:50 },
   sqlTest:{ name:"SQL Injection Test Module", desc:"Automates detection and exploitation of improperly sanitized database queries", cost:2000, type:"bots", base:80 },
   autoClick:{ name:"Automated Interaction Engine", desc:"Simulates repetitive actions to rapidly expand compromised systems", cost:5000, type:"bots", base:500 },
-  phishMini:{ name:"Test Phishing Campaign", desc:"Deploys targeted social engineering attempts with optional manual execution", cost:10000, type:"bots", base:800, clickable:true, clickBonus:2000, clickCooldown:180 },
+  phishMini:{ name:"Phishing Campaign Test", desc:"Deploys targeted social engineering attempts with optional manual execution", cost:10000, type:"bots", base:800, clickable:true, clickBonus:2000, clickCooldown:180 },
   marketScanner:{ name:"Red Pill", desc:"Track the next market price trend for Tier 3 bots (↑) or (↓)", cost:15000, value:1 },
   credGrab:{ name:"Information Grabber", desc:"Collects stored usernames and passwords from compromised systems", cost:20000, type:"bots", base:1500 },
   botSeed:{ name:"Botnet Seeding Framework", desc:"Organizes newly compromised systems into a coordinated network", cost:30000, type:"bots", base:3000 },
-  miniDdos:{ name:"Traffic Flood Utility", desc:"Generates short bursts of artificial network traffic on demand", cost:50000, type:"money", base:200, clickable:true, clickBonus:1000, clickCooldown:120 },
+  miniDdos:{ name:"L4 DDoS Utility", desc:"Generates short bursts of artificial layer 4 network traffic on demand", cost:50000, type:"money", base:200, clickable:true, clickBonus:1000, clickCooldown:120 },
   sqli:{ name:"SQL Injection Automation Suite", desc:"Fully automates exploitation of vulnerable database-backed services", cost:100000, type:"bots", base:15000 },
-  ddos:{ name:"Distributed Traffic Platform", desc:"Coordinates network load across multiple sources for paid disruption", cost:200000, type:"money", base:800, clickable:true, clickBonus:3000, clickCooldown:300 },
+  ddos:{ name:"L7 DDoS Utility", desc:"Coordinates web application load across multiple sources for paid disruption", cost:200000, type:"money", base:800, clickable:true, clickBonus:3000, clickCooldown:300 },
   xss:{ name:"Cross-Site Scripting Suite", desc:"Identifies and abuses client-side injection points in web applications", cost:300000, type:"bots", base:35000 },
   creds:{ name:"Credential Collection Service", desc:"Passively aggregates authentication data across compromised hosts", cost:400000, type:"bots", base:70000 },
   phishing:{ name:"Large Phishing Campaign", desc:"Manages large-scale email-based social engineering operations", cost:500000, type:"bots", base:120000 },
