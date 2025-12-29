@@ -20,16 +20,13 @@ This is V1, I'm sure I will add more over time, please give me some ideas!
 ## Update List
 
 - [ ] More Random Event Types & Offline Events
-- [ ] Bug Fixes
 - [ ] Offline Progress
 - [ ] File Crypt Cycle
-- [ ] Bug Fixes
 - [ ] Crypto Mining (Low/High Risk)
 - [ ] Crypto Market
 - [ ] Scraped Data Market
 - [ ] DDoS Minigame
 - [ ] Slots Minigame
-- [ ] Bug Fixes
 - [ ] Mobile Compatibility
 - [ ] Bug Fixes
 - [X] Bot and Revenue Graphs
