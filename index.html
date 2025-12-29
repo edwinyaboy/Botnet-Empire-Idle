@@ -558,7 +558,7 @@ canvas {
       <h3>Device Exploitation</h3>
       <button class="primary" id="spreadBtn">Spread Network</button>
       <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-top:12px; margin-bottom:12px;">
-        Click to generate random bot tier. Hold to generate 5 bots/sec.
+        Click or hold Spread Network to spread your executable for bots.
       </div>
       
       <div id="toolsInterface"></div>
@@ -737,16 +737,7 @@ const achievements = [
   {id:"market_init", text:"Sell bots for the first time", reward:"income", bonus:0.03, check:()=>game.totalBotsSold>0},
   {id:"small_batch", text:"Sell 1,000 total bots", reward:"income", bonus:0.05, check:()=>game.totalBotsSold>=1000},
   {id:"passive_income", text:"Reach 50 bot/sec generation", reward:"generation", bonus:0.05, check:()=>{
-    let bps = 0;
-    const mult = 1 + getPrestigeBonus() * 0.10;
-    if(game.upgrades.buildPC) bps += 2 * mult;
-    for(const id in game.tools){
-      const t = tools[id];
-      if(t && t.type === "bots" && game.tools[id].active){
-        bps += t.base * 0.5 * mult;
-      }
-    }
-    return bps >= 50;
+    return calculateBPS() >= 50;
   }},
   {id:"cooldown_aware", text:"Trigger a tool cooldown", reward:"cooldown", bonus:0.05, check:()=>{
     for(const id in game.clickCooldowns){
@@ -756,16 +747,9 @@ const achievements = [
   }},
   {id:"steady_growth", text:"Earn $5,000 total", reward:"income", bonus:0.05, check:()=>game.totalEarned>=5000},
   {id:"automation_first", text:"Passive generation exceeds clicks", reward:"automation", bonus:0.05, check:()=>{
-    let bps = 0;
-    const mult = (1 + game.skills.generation * 0.10 + game.skills.automation * 0.05 + getPrestigeBonus() * 0.10) * getAchievementBonus("generation");
-    if(game.upgrades.buildPC) bps += 2 * mult;
-    for(const id in game.tools){
-      const t = tools[id];
-      if(t && t.type === "bots" && game.tools[id].active){
-        bps += t.base * 0.5 * mult;
-      }
-    }
-    return bps > 0 && game.totalClicks > 0 && bps > (game.totalClicks / ((Date.now() - game.lastTick) / 1000 / 60));
+    return bps > 0 && 
+           game.totalClicks > 0 && 
+           bps > (game.totalClicks / ((Date.now() - game.lastTick) / 1000 / 60));
   }},
   {id:"early_planner", text:"Purchase 5 upgrades or tools", reward:"generation", bonus:0.05, check:()=>(Object.keys(game.upgrades).length + Object.keys(game.tools).length)>=5},
   {id:"first_thousand", text:"Acquire 1,000 total bots", reward:"income", bonus:0.02, check:()=>getTotalBots()>=1000},
@@ -803,7 +787,7 @@ function showTutorial(){
           
           <h4>Getting Started</h4>
           <ul>
-            <li><strong>Spread Network Button:</strong> Click to generate 10 random bots. Hold to generate 5 bots/sec continuously.</li>
+            <li><strong>Spread Network Button:</strong> Click to generate 10 random bots. Hold to generate bots continuously.</li>
             <li><strong>Bot Tiers:</strong> T3 (Basic, 72% chance), T2 (Standard, 22%), T1 (Premium, 6%). Higher tiers sell for more.</li>
           </ul>
           
@@ -914,11 +898,11 @@ function getPrestigeBonus(){
 
 function startSpread(){
   if(!spreadHeld){
-    spread(); // Initial click
+    spread();
     spreadHeld = true;
     spreadInterval = setInterval(() => {
-      spread(); // Call spread() instead of directly adding T3
-    }, 200); // Every 200ms instead of 1000ms for better responsiveness
+      spread();
+    }, 200);
   }
 }
 
@@ -995,8 +979,7 @@ function sellCustom(tier){
 
 function buyUpgrade(id){
   if(purchaseInProgress) return;
-  
-  // Check if this is a skill upgrade
+
   if(['tiers', 'prices', 'generation', 'automation'].includes(id)) {
     const baseCosts = {
       tiers: 5e5,
@@ -1013,20 +996,18 @@ function buyUpgrade(id){
       game.skills[id]++;
 	  
 	  saveGame();
-      
-      // Update UI immediately
+
       marketplaceDirty = true;
       upgradesDirty = true;
       
       setTimeout(() => { 
         purchaseInProgress = false;
-        render(); // Force full render to update button states
+        render();
       }, 100);
     }
     return;
   }
-  
-  // Check if this is a regular upgrade
+
   const u = upgrades[id];
   if(!u || game.upgrades[id]) return;
 
@@ -1034,14 +1015,12 @@ function buyUpgrade(id){
     purchaseInProgress = true;
     game.money -= u.cost;
     game.upgrades[id] = true;
-
-    // Mark for re-render
     marketplaceDirty = true;
     upgradesDirty = true;
 
     setTimeout(() => { 
       purchaseInProgress = false;
-      render(); // Force full render to update button states
+      render();
     }, 100);
   }
 }
@@ -1055,27 +1034,17 @@ function buyTool(id){
   if(game.money >= t.cost){
     purchaseInProgress = true;
     game.money -= t.cost;
-    
-    // Initialize tool as active
     game.tools[id] = { active: true, clicks: 0 };
-    
-    // Force UI updates
+
     marketplaceDirty = true;
     upgradesDirty = true;
-    lastToolsState = ""; // Force tools interface refresh
+    lastToolsState = "";
     
-    // Immediate UI feedback
     render();
     
     setTimeout(() => {
       purchaseInProgress = false;
     }, 100);
-  }
-}
-
-function activateTool(id) {
-  if(game.tools[id]) {
-    game.tools[id].active = !game.tools[id].active;
   }
 }
 
@@ -1090,16 +1059,13 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener("load", () => {
-  // Try to load from localStorage first
   const saved = localStorage.getItem(SAVE_KEY);
   if(saved){
     try {
       const parsed = JSON.parse(saved);
-      // Merge with default game structure to ensure all properties exist
       game = {
-        ...game, // Default structure
-        ...parsed, // Saved data
-        // Ensure critical properties exist
+        ...game, 
+        ...parsed,
         bots: parsed.bots || game.bots,
         money: parsed.money || 0,
         prestige: parsed.prestige || 0,
@@ -1110,109 +1076,77 @@ window.addEventListener("load", () => {
         unlocks: parsed.unlocks || { mobile:false }
       };
       
-      // Ensure moneyGraph exists
       if(!Array.isArray(game.moneyGraph)) game.moneyGraph = [];
       
       console.log("Game loaded from save");
     } catch(e) {
       console.error("Error loading save:", e);
-      // Keep default game
     }
   }
-  
-  // Initialize with current time
+
   game.lastTick = Date.now();
   if(!game.lastGraphSample) game.lastGraphSample = Date.now();
-  
-  // Ensure prices exist
   if(!game.prices || Date.now()-game.priceTime>1800000) rollPrices();
-  
   render();
   drawCharts();
-  
-  // Start the game loop
   setInterval(update, 100);
   update();
 });
 
 function saveGame() {
   try {
-    // Update timestamp before saving
     game.lastTick = Date.now();
-    
-    // Stringify with error handling
     const saveData = JSON.stringify(game);
     localStorage.setItem(SAVE_KEY, saveData);
-    
-    // Optional: Log success (remove in production)
     console.log("Game saved successfully");
   } catch(e) {
     console.error("Error saving game:", e);
   }
 }
 
-function update(){
+function update() {
   const now = Date.now();
   const delta = Math.min((now - game.lastTick) / 1000, 1);
   game.lastTick = now;
+  let eventBotMult = 1;
+  let eventMoneyMult = 1;
   
-  let botMult = 1 + game.skills.generation * 0.05 + game.skills.automation * 0.05 + getPrestigeBonus() * 0.10;
-  let moneyMult = 1 + getPrestigeBonus() * 0.10;
-  
-  botMult *= getAchievementBonus("generation");
-  botMult *= getAchievementBonus("automation");
-  moneyMult *= getAchievementBonus("income");
-  
-  if(game.activeEvent === "raid" && game.eventAcknowledged) botMult *= 0.7;
-  if(game.activeEvent === "outage" && game.eventAcknowledged) moneyMult *= 0.5;
-  if(game.activeEvent === "boom" && game.eventAcknowledged) botMult *= 2;
-  
-  if(game.upgrades.buildPC){
-    game.bots.t3 += 1 * botMult * delta;
+  if (game.activeEvent === "raid" && game.eventAcknowledged) {
+    eventBotMult = 0.7;
+  } else if (game.activeEvent === "outage" && game.eventAcknowledged) {
+    eventMoneyMult = 0.5;
+  } else if (game.activeEvent === "boom" && game.eventAcknowledged) {
+    eventBotMult = 2.0; 
   }
-  
-  for(const id in game.tools){
-    const t = tools[id];
-    if(!t || !t.type) continue;
-    const active = game.tools[id].active ? 0.5 : 0;
-    if(t.type === "bots"){
-      game.bots.t3 += t.base * active * botMult * delta;
-    } else if(t.type === "money"){
-      const earned = t.base * active * moneyMult * delta;
-      game.money += earned;
-      game.totalEarned += earned;
-    }
-  }
-  
+  const bps = calculateBPS();
+  const mps = calculateMPS();
+  game.bots.t3 += bps * delta * eventBotMult;
+  const earned = mps * delta * eventMoneyMult;
+  game.money += earned;
+  game.totalEarned += earned;
   for(const id in game.clickCooldowns){
     if(game.clickCooldowns[id] > 0){
       game.clickCooldowns[id] -= delta;
       if(game.clickCooldowns[id] < 0) game.clickCooldowns[id] = 0;
     }
   }
-  
   if(now - game.lastGraphSample >= GRAPH_SAMPLE_INTERVAL){
     game.moneyGraph.push(game.totalEarned);
     if(game.moneyGraph.length > GRAPH_MAX_POINTS) game.moneyGraph.shift();
     game.lastGraphSample = now;
   }
-  
   let priceRollTime = 1800000;
-  
-  if(Date.now() - game.priceTime > priceRollTime) rollPrices();
-  
-  // Save every 5 seconds AND on important events
+  if(Date.now() - game.priceTime > priceRollTime) {
+    rollPrices();
+  }
   if(!game.lastSaveTime || now - game.lastSaveTime > 5000) {
     saveGame();
     game.lastSaveTime = now;
   }
-  
   triggerEvent();
   drawCharts();
   render();
 }
-
-// Also save on important actions:
 function buyTool(id){
   if(purchaseInProgress) return;
 
@@ -1223,10 +1157,7 @@ function buyTool(id){
     purchaseInProgress = true;
     game.money -= t.cost;
     game.tools[id] = { active:true, clicks:0 };
-    
-    // Save immediately after purchase
     saveGame();
-    
     setTimeout(() => { 
       purchaseInProgress = false;
       render();
@@ -1264,6 +1195,35 @@ function clickTool(id){
   setTimeout(() => { toolClickInProgress = false; }, 50);
 }
 
+function getTotalBots() {
+  return game.bots.t1 + game.bots.t2 + game.bots.t3 + (game.bots.mobile || 0);
+}
+
+function getPrestigeBonus() {
+  let extraPrestige = 0;
+  for (const a of achievements) {
+    if (game.achievements[a.id] && a.reward === "prestige") {
+      extraPrestige += a.bonus;
+    }
+  }
+  return game.prestige + extraPrestige;
+}
+
+function getAchievementBonus(type) {
+  let bonus = 1;
+  for (const a of achievements) {
+    if (game.achievements[a.id] && a.reward === type) {
+      bonus += a.bonus;
+    }
+  }
+  return bonus;
+}
+
+function safeInt(n) {
+  return Math.floor(n + 1e-9);
+}
+
+
 function upgrade(skill){
   if(purchaseInProgress) return;
   const baseCosts = {
@@ -1279,16 +1239,13 @@ function upgrade(skill){
     purchaseInProgress = true;
     game.money -= cost;
     game.skills[skill]++;
-	
 	saveGame();
-    
-    // Update UI immediately
     marketplaceDirty = true;
     upgradesDirty = true;
     
     setTimeout(() => { 
       purchaseInProgress = false;
-      render(); // Force full render to update button states
+      render();
     }, 100);
   }
 }
@@ -1394,43 +1351,68 @@ function updateSellButtonStates(){
   });
 }
 
-function render(){
+function calculateBPS() {
+  const prestigeBonus = getPrestigeBonus();
+  const generationSkillBonus = game.skills.generation * 0.10;
+  const automationSkillBonus = game.skills.automation * 0.05;
+  const achievementGenerationBonus = getAchievementBonus("generation");
+  const achievementAutomationBonus = getAchievementBonus("automation");
+  const totalMultiplier = (1 + generationSkillBonus + automationSkillBonus + prestigeBonus * 0.10) * 
+                         achievementGenerationBonus * 
+                         achievementAutomationBonus;
+  
+  let bps = 0;
+  for (const id in game.tools) {
+    const tool = tools[id];
+    if (!tool || tool.type !== "bots") continue;
+    const active = game.tools[id].active ? 1 : 0;
+    if (active > 0) {
+      bps += tool.base * active * totalMultiplier;
+    }
+  }
+  return bps;
+}
+
+function calculateMPS() {
+  const prestigeBonus = getPrestigeBonus();
+  const achievementIncomeBonus = getAchievementBonus("income");
+  const totalMultiplier = (1 + prestigeBonus * 0.10) * achievementIncomeBonus;
+  let mps = 0;
+  for (const id in game.tools) {
+    const tool = tools[id];
+    if (!tool || tool.type !== "money") continue;
+    const active = game.tools[id].active ? 1 : 0;
+    if (active > 0) {
+      mps += tool.base * active * totalMultiplier;
+    }
+  }
+  return mps;
+}
+
+function render() {
   const total = getTotalBots();
   document.getElementById("totalBots").textContent = Math.floor(total).toLocaleString();
   document.getElementById("money").textContent = Math.floor(game.money).toLocaleString();
   document.getElementById("prestige").textContent = game.prestige;
+
+  const bps = calculateBPS();
+  const mps = calculateMPS();
   
-  let bps = 0, mps = 0;
-  const botMult = (1 + game.skills.generation * 0.05 + game.skills.automation * 0.05 + getPrestigeBonus() * 0.10) * getAchievementBonus("generation") * getAchievementBonus("automation");
-  const moneyMult = (1 + getPrestigeBonus() * 0.10) * getAchievementBonus("income");
-  
-  if(game.upgrades.buildPC){
-    bps += 2 * botMult;
-  }
-  
-  for(const id in game.tools){
-    const t = tools[id];
-    if(!t || !t.type) continue;
-    const active = game.tools[id].active ? 0.5 : 0;
-    if(t.type === "bots") bps += t.base * active * botMult;
-    if(t.type === "money") mps += t.base * active * moneyMult;
-  }
-  
-  document.getElementById("bps").textContent = Math.floor(bps);
-  document.getElementById("mps").textContent = Math.floor(mps);
+  document.getElementById("bps").textContent = safeInt(bps);
+  document.getElementById("mps").textContent = safeInt(mps);
   
   document.getElementById("t1Count").textContent = Math.floor(game.bots.t1).toLocaleString();
   document.getElementById("t2Count").textContent = Math.floor(game.bots.t2).toLocaleString();
   document.getElementById("t3Count").textContent = Math.floor(game.bots.t3).toLocaleString();
   
-  if(game.unlocks.mobile){
+  if (game.unlocks.mobile) {
     const mobileCountEl = document.getElementById("mobileCount");
-    if(mobileCountEl){
+    if (mobileCountEl) {
       mobileCountEl.innerHTML = `<div style="margin-bottom:6px;">Mobile Devices<span class="tier-mobile">MOBILE</span>: <span style="color:#58a6ff; font-weight:600;">${Math.floor(game.bots.mobile).toLocaleString()}</span></div>`;
     }
   } else {
     const mobileCountEl = document.getElementById("mobileCount");
-    if(mobileCountEl) mobileCountEl.innerHTML = "";
+    if (mobileCountEl) mobileCountEl.innerHTML = "";
   }
   
   const priceRollTime = 1800;
@@ -1438,32 +1420,32 @@ function render(){
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
   const priceTimerEl = document.getElementById("priceTimer");
-  if(priceTimerEl){
-    let timerText = `${mins}:${secs.toString().padStart(2,'0')}`;
-    if(game.upgrades.marketScanner && game.priceDirection !== 0){
+  if (priceTimerEl) {
+    let timerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+    if (game.upgrades.marketScanner && game.priceDirection !== 0) {
       timerText += game.priceDirection > 0 ? ' (↑)' : ' (↓)';
     }
     priceTimerEl.textContent = timerText;
   }
   
-  if(game.activeEvent && game.eventAcknowledged && Date.now() < game.eventEndTime){
+  if (game.activeEvent && game.eventAcknowledged && Date.now() < game.eventEndTime) {
     const remaining = Math.ceil((game.eventEndTime - Date.now()) / 1000);
     const m = Math.floor(remaining / 60);
     const s = remaining % 60;
     const eventTimer = document.getElementById("eventTimer");
-    if(eventTimer){
+    if (eventTimer) {
       eventTimer.innerHTML = `
         <div class="event-timer-label">${game.activeEvent.toUpperCase()} ACTIVE</div>
-        <div>${game.eventEffect || ''} - ${m}:${s.toString().padStart(2,'0')} remaining</div>
+        <div>${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining</div>
       `;
       eventTimer.style.display = "block";
     }
   } else {
     const eventTimer = document.getElementById("eventTimer");
-    if(eventTimer) eventTimer.style.display = "none";
+    if (eventTimer) eventTimer.style.display = "none";
   }
   
-  if(game.priceTime !== lastPriceUpdate || game.unlocks.mobile !== lastMobileState){
+  if (game.priceTime !== lastPriceUpdate || game.unlocks.mobile !== lastMobileState) {
     renderSellInterface();
     lastPriceUpdate = game.priceTime;
     lastMobileState = game.unlocks.mobile;
@@ -1474,18 +1456,18 @@ function render(){
   renderSkills();
   renderAchievements();
   
-  if(game.money !== lastMoney){
+  if (game.money !== lastMoney) {
     marketplaceDirty = true;
     upgradesDirty = true;
     lastMoney = game.money;
   }
   
-  if(upgradesDirty){
+  if (upgradesDirty) {
     renderUpgrades();
     upgradesDirty = false;
   }
 
-  if(marketplaceDirty){
+  if (marketplaceDirty) {
     renderMarketplace();
     marketplaceDirty = false;
   }
@@ -1496,7 +1478,7 @@ function render(){
     toolStates: Object.keys(game.tools).map(id => game.tools[id].active)
   });
   
-  if(toolsStateKey !== lastToolsState){
+  if (toolsStateKey !== lastToolsState) {
     renderToolsInterface();
     lastToolsState = toolsStateKey;
   } else {
@@ -1577,7 +1559,7 @@ function renderUpgrades(){
       </div>
       <div class="tool-desc">${u.desc}`;
     
-    if(u.effect === "base_bots") html += ` - ${u.value} bots/sec`;
+    if(u.effect === "base_bots") html += ` - ${u.value} T3 bots/sec`;
     if(u.effect === "sell_price") html += ` - +${(u.value*100).toFixed(0)}% sell price`;
     if(u.effect === "market_info") html += ` - Shows T3 price trends`;
     
@@ -1613,14 +1595,12 @@ function renderMarketplace(){
       </div>
       <div class="tool-desc">${t.desc}`;
 
-    if(t.type === "bots") html += ` - ${t.base} bots/sec`;
+    if(t.type === "bots") html += ` - ${t.base} T3 bots/sec`;
     if(t.type === "money") html += ` - $${t.base}/sec`;
     if(t.clickable) html += ` - Clickable`;
     if(t.unlocks === "mobile") html += ` - Unlocks Mobile Infrastructure`;
 
     html += `</div>`;
-
-    // Show purchase button only if not owned
     if(!owned){
       html += `<button onclick="buyTool('${id}')" ${!affordable?'disabled':''}>
         Purchase - $${t.cost.toLocaleString()}
@@ -1697,86 +1677,117 @@ function renderAchievements(){
 
 function renderToolsInterface(){
   const toolsUI = document.getElementById("toolsInterface");
-  
-  const ownedTools = Object.keys(game.tools).filter(id => {
-    return game.tools[id] !== undefined; // Simple check
+  const ownedClickableTools = Object.keys(game.tools).filter(id => {
+    const tool = game.tools[id];
+    const toolDef = tools[id];
+    return tool !== undefined && 
+           toolDef && 
+           toolDef.clickable;
   });
   
-  if(ownedTools.length === 0){
-    toolsUI.innerHTML = `<div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; padding:10px; text-align:center;">Purchase tools from marketplace to use here</div>`;
+  if(ownedClickableTools.length === 0){
+    toolsUI.innerHTML = `<div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; padding:10px; text-align:center;">
+      No clickable tools purchased yet. Purchase clickable tools from marketplace to use them here.
+    </div>`;
     return;
   }
-  
-  if(!game.activeToolTab || !game.tools[game.activeToolTab]){
-    game.activeToolTab = ownedTools[0];
+
+  if(!game.activeToolTab || !game.tools[game.activeToolTab] || !tools[game.activeToolTab]?.clickable){
+    game.activeToolTab = ownedClickableTools[0];
   }
-  
+
   let html = '<div class="tool-tabs">';
-  ownedTools.forEach(id => {
-    html += `<div class="tool-tab ${game.activeToolTab===id?'active':''}" onclick="game.activeToolTab='${id}';render()">
+  ownedClickableTools.forEach(id => {
+    html += `<div class="tool-tab ${game.activeToolTab===id?'active':''}" 
+                    onclick="game.activeToolTab='${id}';render()">
       ${tools[id].name.split(' ')[0]}
     </div>`;
   });
   html += '</div>';
-  
-  ownedTools.forEach(id => {
+
+  ownedClickableTools.forEach(id => {
     const t = tools[id];
     const owned = game.tools[id];
+    const cd = game.clickCooldowns[id] || 0;
+    const clicks = owned.clicks || 0;
+    const cooldownReduction = getCooldownReduction();
+    
     html += `<div class="tool-panel ${game.activeToolTab===id?'active':''}" data-tool-id="${id}">
-      <div style="margin-bottom:10px;">
-        <div style="font-size:clamp(11px, 2.5vw, 13px); font-weight:600; color:#58a6ff; margin-bottom:4px;">${t.name}</div>
-        <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e;">${t.desc}</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:clamp(11px, 2.5vw, 13px); font-weight:600; color:#58a6ff; margin-bottom:4px;">
+          ${t.name}
+        </div>
+        <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:8px;">
+          ${t.desc}
+        </div>
+        <div style="font-size:clamp(10px, 1.8vw, 10px); color:#8b949e; background:#21262d; padding:4px 8px; border-radius:4px; display:inline-block;">
+          ${t.type === "bots" ? "Generates bots" : "Generates money"} on click
+        </div>
       </div>`;
+
+    const isOnCooldown = cd > 0;
+    const cooldownWidth = isOnCooldown ? 
+      (1 - cd / (t.clickCooldown * cooldownReduction)) * 100 : 0;
     
-    if(t.clickable){
-      const cd = game.clickCooldowns[id] || 0;
-      const clicks = owned.clicks || 0;
-      html += `<button onclick="clickTool('${id}')" data-click-btn="${id}" ${cd>0?'disabled':''}>
-        <span data-click-text="${id}">Execute Bonus (${clicks}/50)${cd>0?' - '+Math.ceil(cd)+'s':''}</span>
-      </button>`;
-      html += `<div class="cooldown-bar" data-cooldown-bar="${id}"><div class="cooldown-fill" data-cooldown-fill="${id}" style="width:${cd>0?(1-cd/(t.clickCooldown * getCooldownReduction()))*100:0}%"></div></div>`;
-    }
-    
-    html += '</div>';
+    html += `
+      <button onclick="clickTool('${id}')" 
+              data-click-btn="${id}" 
+              ${isOnCooldown ? 'disabled' : ''}
+              style="margin-bottom:8px;">
+        <span data-click-text="${id}">
+          Execute Bonus (${clicks}/50)${isOnCooldown ? ' - ' + Math.ceil(cd) + 's' : ''}
+        </span>
+      </button>
+      <div class="cooldown-bar" data-cooldown-bar="${id}" style="${isOnCooldown ? '' : 'display:none'}">
+        <div class="cooldown-fill" 
+             data-cooldown-fill="${id}" 
+             style="width:${cooldownWidth}%"></div>
+      </div>
+      
+      <div style="margin-top:12px; font-size:clamp(10px, 1.8vw, 10px); color:#8b949e;">
+        <div><strong>Click Bonus:</strong> ${t.type === "bots" ? t.clickBonus.toLocaleString() + " bots" : "$" + t.clickBonus.toLocaleString()}</div>
+        <div><strong>Cooldown:</strong> ${t.clickCooldown} seconds</div>
+        ${cooldownReduction < 1 ? `<div><strong>Cooldown Reduction:</strong> ${Math.round((1 - cooldownReduction) * 100)}%</div>` : ''}
+      </div>
+    </div>`;
   });
   
   toolsUI.innerHTML = html;
 }
 
 function updateToolsInterfaceDynamic(){
-  const ownedTools = Object.keys(game.tools).filter(id => {
-    const t = tools[id];
-    return t && t.type;
+  const ownedClickableTools = Object.keys(game.tools).filter(id => {
+    const toolDef = tools[id];
+    return toolDef && toolDef.clickable;
   });
   
-  ownedTools.forEach(id => {
+  ownedClickableTools.forEach(id => {
     const t = tools[id];
     const owned = game.tools[id];
-    
-    if(t.clickable){
-      const cd = game.clickCooldowns[id] || 0;
-      const clicks = owned.clicks || 0;
-      
-      // Update click button
-      const clickBtn = document.querySelector(`[data-click-btn="${id}"]`);
-      if(clickBtn){
-        clickBtn.disabled = cd > 0;
-        const clickText = document.querySelector(`[data-click-text="${id}"]`);
-        if(clickText){
-          clickText.textContent = `Execute Bonus (${clicks}/50)${cd>0?' - '+Math.ceil(cd)+'s':''}`;
-        }
+    const cd = game.clickCooldowns[id] || 0;
+    const clicks = owned.clicks || 0;
+    const isOnCooldown = cd > 0;
+    const cooldownReduction = getCooldownReduction();
+    const cooldownWidth = isOnCooldown ? 
+      (1 - cd / (t.clickCooldown * cooldownReduction)) * 100 : 0;
+
+    const clickBtn = document.querySelector(`[data-click-btn="${id}"]`);
+    if(clickBtn){
+      clickBtn.disabled = isOnCooldown;
+      const clickText = document.querySelector(`[data-click-text="${id}"]`);
+      if(clickText){
+        clickText.textContent = `Execute Bonus (${clicks}/50)${isOnCooldown ? ' - ' + Math.ceil(cd) + 's' : ''}`;
       }
-      
-      // Update cooldown bar
-      const cooldownBar = document.querySelector(`[data-cooldown-bar="${id}"]`);
-      const cooldownFill = document.querySelector(`[data-cooldown-fill="${id}"]`);
-      if(cooldownBar && cooldownFill){
-        if(cd > 0){
-          cooldownBar.style.display = '';
-          cooldownFill.style.width = ((1 - cd / (t.clickCooldown * getCooldownReduction())) * 100) + '%';
-        } else {
-          cooldownBar.style.display = 'none';
-        }
+    }
+
+    const cooldownBar = document.querySelector(`[data-cooldown-bar="${id}"]`);
+    const cooldownFill = document.querySelector(`[data-cooldown-fill="${id}"]`);
+    if(cooldownBar && cooldownFill){
+      if(isOnCooldown){
+        cooldownBar.style.display = '';
+        cooldownFill.style.width = cooldownWidth + '%';
+      } else {
+        cooldownBar.style.display = 'none';
       }
     }
   });
@@ -2025,14 +2036,12 @@ function importSave(){
   if(data){
     try {
       const imported = JSON.parse(atob(data));
-      // Better validation
       if(imported && 
          typeof imported === 'object' &&
          imported.bots && 
          typeof imported.bots.t3 !== 'undefined' &&
          typeof imported.money === 'number'){
         
-        // Merge with existing game structure
         game = { ...game, ...imported };
         localStorage.setItem(SAVE_KEY, JSON.stringify(game));
         alert("Save data imported successfully");
