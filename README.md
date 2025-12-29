@@ -1,4 +1,4 @@
-#Botnet Empire Idle 🖥️🐀
+# Botnet Empire Idle 🖥️🐀
 
 [![Play Now](https://img.shields.io/badge/Play_Now-🎮-blue?style=for-the-badge)](https://edwinyaboy.github.io/Botnet-Empire-Idle/)
 ![GitHub Repo Size](https://img.shields.io/github/repo-size/edwinyaboy/Botnet-Empire-Idle?style=flat-square)
