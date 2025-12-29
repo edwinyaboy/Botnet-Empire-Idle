@@ -1,13 +1,13 @@
 #Botnet Empire Idle 🖥️🐀
 
-[![Play Now](https://img.shields.io/badge/Play_Now-🎮-blue?style=for-the-badge)](https://edwinyaboy.github.io/botnet-empire-idle/)
-![GitHub Repo Size](https://img.shields.io/github/repo-size/edwinyaboy/botnet-empire-idle?style=flat-square)
-![GitHub stars](https://img.shields.io/github/stars/edwinyaboy/botnet-empire-idle?style=flat-square)
-![GitHub last commit](https://img.shields.io/github/last-commit/edwinyaboy/botnet-empire-idle?style=flat-square)
+[![Play Now](https://img.shields.io/badge/Play_Now-🎮-blue?style=for-the-badge)](https://edwinyaboy.github.io/Botnet-Empire-Idle/)
+![GitHub Repo Size](https://img.shields.io/github/repo-size/edwinyaboy/Botnet-Empire-Idle?style=flat-square)
+![GitHub stars](https://img.shields.io/github/stars/edwinyaboy/Botnet-Empire-Idle?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/edwinyaboy/Botnet-Empire-Idle?style=flat-square)
 
 A browser-based hacker and botnet themed idle clicker game.
 
-**Play Here:** [https://edwinyaboy.github.io/botnet-empire-idle/](https://edwinyaboy.github.io/botnet-empire-idle/)
+**Play Here:** [https://edwinyaboy.github.io/Botnet-Empire-Idle/](https://edwinyaboy.github.io/Botnet-Empire-Idle/)
 
 ---
 
