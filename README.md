@@ -12,7 +12,7 @@ A browser-based hacker and botnet themed idle clicker game.
 ---
 
 ⚠️ **Still in development — expect bugs!** Please report issues or suggestions.
-
+⚠️ Keep a local version to ensure your saved data is secure, as updates make break your current game save. ⚠️
 ---
 
 ## Update List
