@@ -29,21 +29,25 @@ export function update() {
   const earned = mps * delta * eventMoneyMult;
   game.money += earned;
   game.totalEarned += earned;
+  
   for(const id in game.clickCooldowns){
     if(game.clickCooldowns[id] > 0){
       game.clickCooldowns[id] -= delta;
       if(game.clickCooldowns[id] < 0) game.clickCooldowns[id] = 0;
     }
   }
+  
   if(now - game.lastGraphSample >= GRAPH_SAMPLE_INTERVAL){
     game.moneyGraph.push(game.totalEarned);
     if(game.moneyGraph.length > GRAPH_MAX_POINTS) game.moneyGraph.shift();
     game.lastGraphSample = now;
   }
+  
   let priceRollTime = 1800000;
   if(Date.now() - game.priceTime > priceRollTime) {
     rollPrices();
   }
+  
   if(!game.lastSaveTime || now - game.lastSaveTime > 5000) {
     saveGame();
     game.lastSaveTime = now;
@@ -55,10 +59,8 @@ export function calculateBPS() {
   const generationSkillBonus = game.skills.generation * 0.10;
   const automationSkillBonus = game.skills.automation * 0.05;
   const achievementGenerationBonus = getAchievementBonus("generation");
-  const achievementAutomationBonus = getAchievementBonus("automation");
   const totalMultiplier = (1 + generationSkillBonus + automationSkillBonus + prestigeBonus * 0.10) * 
-                         achievementGenerationBonus * 
-                         achievementAutomationBonus;
+                         achievementGenerationBonus;
   
   let bps = 0;
 
@@ -102,7 +104,17 @@ export function calculateMPS() {
   return mps;
 }
 
-function rollPrices(){
+export function getPrestigeBonus(){
+  let extraPrestige = 0;
+  for(const a of achievements){
+    if(game.achievements[a.id] && a.reward === "prestige"){
+      extraPrestige += a.bonus;
+    }
+  }
+  return game.prestige + extraPrestige;
+}
+
+export function rollPrices(){
   const oldPrices = game.prices;
   game.prices = {
     t1:(Math.random()*0.45+0.8),
@@ -138,7 +150,10 @@ export function importSave(){
          typeof imported === 'object' &&
          imported.bots && 
          typeof imported.bots.t3 !== 'undefined' &&
-         typeof imported.money === 'number'){
+         typeof imported.money === 'number' &&
+         imported.skills &&
+         imported.upgrades &&
+         imported.tools){
         
         Object.assign(game, imported);
         localStorage.setItem("botnet_empire_v1", JSON.stringify(game));
@@ -204,15 +219,9 @@ export function upgrade(skill){
     game.money -= cost;
     game.skills[skill]++;
     saveGame();
-  }
-}
-
-function getPrestigeBonus(){
-  let extraPrestige = 0;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === "prestige"){
-      extraPrestige += a.bonus;
+    
+    if (typeof window.markSkillsDirty === 'function') {
+      window.markSkillsDirty();
     }
   }
-  return game.prestige + extraPrestige;
 }

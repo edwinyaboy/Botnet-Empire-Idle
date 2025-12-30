@@ -1,15 +1,22 @@
 import { game } from './state.js';
-import { achievements } from './achievements.js';
+import { getPrestigeBonus } from './gameLoop.js';
+import { getAchievementBonus } from './bots.js';
 
 export let toolClickInProgress = false;
+let lastToolClick = 0;
+const MIN_TOOL_CLICK_INTERVAL = 50;
 
 export function clickTool(id){
+  const now = Date.now();
+  if(now - lastToolClick < MIN_TOOL_CLICK_INTERVAL) return;
   if(toolClickInProgress) return;
+  
   const t = tools[id];
   const cd = game.clickCooldowns[id] || 0;
   if(cd > 0) return;
   
   toolClickInProgress = true;
+  lastToolClick = now;
   
   game.tools[id].clicks = (game.tools[id].clicks || 0) + 1;
   
@@ -25,42 +32,11 @@ export function clickTool(id){
   }
   
   if(game.tools[id].clicks >= 50){
-    const cooldownReduction = getCooldownReduction();
-    game.clickCooldowns[id] = t.clickCooldown * cooldownReduction;
+    game.clickCooldowns[id] = t.clickCooldown;
     game.tools[id].clicks = 0;
   }
   
   setTimeout(() => { toolClickInProgress = false; }, 50);
-}
-
-function getCooldownReduction(){
-  let reduction = 1;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === "cooldown"){
-      reduction -= a.bonus;
-    }
-  }
-  return Math.max(0.1, reduction);
-}
-
-function getPrestigeBonus(){
-  let extraPrestige = 0;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === "prestige"){
-      extraPrestige += a.bonus;
-    }
-  }
-  return game.prestige + extraPrestige;
-}
-
-function getAchievementBonus(type){
-  let bonus = 1;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === type){
-      bonus += a.bonus;
-    }
-  }
-  return bonus;
 }
 
 export const tools = {

@@ -1,5 +1,6 @@
 import { game, saveGame } from './state.js';
-import { achievements } from './achievements.js';
+import { getAchievementBonus } from './bots.js';
+import { getPrestigeBonus } from './gameLoop.js';
 
 export function sell(tier, amount){
   amount = Math.max(0, Math.floor(amount));
@@ -41,24 +42,4 @@ export function sellCustom(tier){
     sell(tier, amount);
     input.value = "";
   }
-}
-
-function getPrestigeBonus(){
-  let extraPrestige = 0;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === "prestige"){
-      extraPrestige += a.bonus;
-    }
-  }
-  return game.prestige + extraPrestige;
-}
-
-function getAchievementBonus(type){
-  let bonus = 1;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === type){
-      bonus += a.bonus;
-    }
-  }
-  return bonus;
 }

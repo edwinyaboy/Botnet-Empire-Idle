@@ -55,6 +55,7 @@ export function stopSpread(){
 export function getTotalBots(){
   return game.bots.t1 + game.bots.t2 + game.bots.t3 + game.bots.mobile;
 }
+
 export function getAchievementBonus(type){
   let bonus = 1;
   for(const a of achievements){

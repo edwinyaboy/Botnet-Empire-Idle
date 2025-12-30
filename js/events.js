@@ -2,8 +2,10 @@ import { game } from './state.js';
 
 export function showEvent(event){
   const modal = document.getElementById("eventModal");
+  if (!modal) return;
+  
   modal.innerHTML = `
-    <div class="modal-overlay" onclick="return false;" style="pointer-events: all;">
+    <div class="modal-overlay" style="pointer-events: all; display: flex;">
       <div class="modal" onclick="event.stopPropagation();">
         <div class="modal-title">${event.title}</div>
         <div class="modal-content">${event.text}</div>
@@ -11,11 +13,16 @@ export function showEvent(event){
       </div>
     </div>
   `;
+  modal.style.display = 'block';
 }
 
 export function acknowledgeEvent(){
   game.eventAcknowledged = true;
-  document.getElementById("eventModal").innerHTML = "";
+  const modal = document.getElementById("eventModal");
+  if (modal) {
+    modal.innerHTML = "";
+    modal.style.display = 'none';
+  }
 }
 
 export function triggerEvent(){

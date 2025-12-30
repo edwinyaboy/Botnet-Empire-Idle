@@ -3,7 +3,7 @@ import { getTotalBots, getAchievementBonus } from './bots.js';
 import { achievements } from './achievements.js';
 import { upgrades } from './upgrades.js';
 import { triggerEvent } from './events.js';
-import { calculateBPS, calculateMPS, upgrade } from './gameLoop.js';
+import { calculateBPS, calculateMPS, upgrade, getPrestigeBonus } from './gameLoop.js';
 import { clickTool, tools } from './tools.js';
 
 let lastPriceUpdate = 0;
@@ -11,6 +11,7 @@ let lastMoney = 0;
 let lastMobileState = false;
 let marketplaceDirty = true;
 let upgradesDirty = true;
+let skillsDirty = true;
 let lastToolsState = "";
 let resizeTimeout;
 
@@ -51,7 +52,7 @@ export function render() {
   const priceTimerEl = document.getElementById("priceTimer");
   if (priceTimerEl) {
     let timerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-    if (game.upgrades.marketScanner && game.priceDirection !== 0) {
+    if (game.upgrades && game.upgrades.marketScanner && game.priceDirection !== 0) {
       timerText += game.priceDirection > 0 ? ' (↑)' : ' (↓)';
     }
     priceTimerEl.textContent = timerText;
@@ -82,13 +83,14 @@ export function render() {
     updateSellButtonStates();
   }
   
-  renderSkills();
-  renderAchievements();
-  
   if (game.money !== lastMoney) {
-    marketplaceDirty = true;
-    upgradesDirty = true;
+    updatePurchaseButtonStates();
     lastMoney = game.money;
+  }
+  
+  if (skillsDirty) {
+    renderSkills();
+    skillsDirty = false;
   }
   
   if (upgradesDirty) {
@@ -114,6 +116,8 @@ export function render() {
     updateToolsInterfaceDynamic();
   }
   
+  renderAchievements();
+  
   const progress = total > 0 ? Math.min(100, (total / 8.2e9) * 100) : 0;
   const progressEl = document.getElementById("prestigeProgress");
   const progressTextEl = document.getElementById("prestigeText");
@@ -122,84 +126,94 @@ export function render() {
   if(progressEl) progressEl.style.width = progress + "%";
   if(progressTextEl) progressTextEl.textContent = progress.toFixed(2) + "%";
   if(prestigeBonusEl) prestigeBonusEl.textContent = (getPrestigeBonus() * 10).toFixed(1);
+  
+  drawCharts();
 }
 
-export function update() {
-  const now = Date.now();
-  const delta = Math.min((now - game.lastTick) / 1000, 1);
-  game.lastTick = now;
-  let eventBotMult = 1;
-  let eventMoneyMult = 1;
-  
-  if (game.activeEvent === "raid" && game.eventAcknowledged) {
-    eventBotMult = 0.7;
-  } else if (game.activeEvent === "outage" && game.eventAcknowledged) {
-    eventMoneyMult = 0.5;
-  } else if (game.activeEvent === "boom" && game.eventAcknowledged) {
-    eventBotMult = 2.0; 
-  }
-  const bps = calculateBPS();
-  const mps = calculateMPS();
-  game.bots.t3 += bps * delta * eventBotMult;
-  const earned = mps * delta * eventMoneyMult;
-  game.money += earned;
-  game.totalEarned += earned;
-  for(const id in game.clickCooldowns){
-    if(game.clickCooldowns[id] > 0){
-      game.clickCooldowns[id] -= delta;
-      if(game.clickCooldowns[id] < 0) game.clickCooldowns[id] = 0;
+function updatePurchaseButtonStates() {
+  for (const id in tools) {
+    if (game.tools[id]) continue;
+    
+    const btn = document.querySelector(`[data-tool-btn="${id}"]`);
+    if (btn) {
+      const affordable = game.money >= tools[id].cost;
+      btn.disabled = !affordable;
     }
   }
-  if(now - game.lastGraphSample >= 10000){
-    game.moneyGraph.push(game.totalEarned);
-    if(game.moneyGraph.length > 6048) game.moneyGraph.shift();
-    game.lastGraphSample = now;
+  
+  for (const id in upgrades) {
+    if (game.upgrades[id]) continue;
+    
+    const btn = document.querySelector(`[data-upgrade-btn="${id}"]`);
+    if (btn) {
+      const affordable = game.money >= upgrades[id].cost;
+      btn.disabled = !affordable;
+    }
   }
-  let priceRollTime = 1800000;
-  if(Date.now() - game.priceTime > priceRollTime) {
-    rollPrices();
-  }
-  if(!game.lastSaveTime || now - game.lastSaveTime > 5000) {
-    saveGame();
-    game.lastSaveTime = now;
-  }
-  triggerEvent();
-  drawCharts();
-  render();
-}
-
-function rollPrices(){
-  const oldPrices = game.prices;
-  game.prices = {
-    t1:(Math.random()*0.45+0.8),
-    t2:(Math.random()*0.5+0.3),
-    t3:(Math.random()*0.22+0.08),
-    mobile:(Math.random()*0.8+1.2)
+  
+  const skillDefs = ['tiers', 'prices', 'generation', 'automation'];
+  const baseCosts = {
+    tiers: 5e5,
+    prices: 1e6,
+    generation: 2e6,
+    automation: 5e6
   };
   
-  if(oldPrices && game.upgrades.marketScanner){
-    game.priceDirection = game.prices.t3 > oldPrices.t3 ? 1 : (game.prices.t3 < oldPrices.t3 ? -1 : 0);
+  for (const skill of skillDefs) {
+    const level = game.skills[skill] || 0;
+    const cost = baseCosts[skill] * Math.pow(1.6, level);
+    const btn = document.querySelector(`[data-skill-btn="${skill}"]`);
+    if (btn) {
+      const affordable = game.money >= cost;
+      btn.disabled = !affordable;
+    }
   }
-  
-  game.priceTime = Date.now();
 }
 
-function updateSellButtonStates(){
-  const tiers = ['t1', 't2', 't3'];
-  if(game.unlocks.mobile) tiers.push('mobile');
+function renderAchievements() {
+  const ach = document.getElementById("achievements");
+  if (!ach) return;
   
-  tiers.forEach(tier => {
-    const buttons = document.querySelectorAll(`.sell-btn-${tier}`);
-    buttons.forEach(btn => {
-      const amount = parseInt(btn.getAttribute('data-amount'));
-      btn.disabled = game.bots[tier] < amount;
-    });
-    
-    const input = document.getElementById(`sell_custom_${tier}`);
-    if(input){
-      input.max = Math.floor(game.bots[tier]);
+  ach.innerHTML = "";
+  
+  let anyNewAchievement = false;
+  
+  achievements.forEach(a => {
+    let done = false;
+    try {
+      done = a.check();
+    } catch(e) {
+      console.error("Error checking achievement", a.id, e);
+      done = false;
     }
+    
+    const alreadyHas = game.achievements[a.id];
+    
+    if (done && !alreadyHas) {
+      game.achievements[a.id] = true;
+      anyNewAchievement = true;
+    }
+    
+    const isDone = alreadyHas || done;
+    
+    let rewardText = "";
+    if(a.reward === "income") rewardText = `+${(a.bonus*100).toFixed(0)}% Income`;
+    else if(a.reward === "generation") rewardText = `+${(a.bonus*100).toFixed(0)}% Generation`;
+    else if(a.reward === "prestige") rewardText = `+${a.bonus} Effective Prestige`;
+    else if(a.reward === "click") rewardText = `+${(a.bonus*100).toFixed(0)}% Click Power`;
+    else if(a.reward === "special") rewardText = `Special Effect`;
+    
+    if (a.hidden && !isDone) return;
+    
+    ach.innerHTML += `<div class="achievement ${isDone?'done':''}">
+      <div class="achievement-text">${a.text}</div>
+      ${rewardText ? `<div class="achievement-reward">${rewardText}</div>` : ''}
+    </div>`;
   });
+  
+  if (anyNewAchievement) {
+    saveGame();
+  }
 }
 
 function renderSellInterface(){
@@ -257,6 +271,24 @@ function renderSellInterface(){
   });
 }
 
+function updateSellButtonStates(){
+  const tiers = ['t1', 't2', 't3'];
+  if(game.unlocks.mobile) tiers.push('mobile');
+  
+  tiers.forEach(tier => {
+    const buttons = document.querySelectorAll(`.sell-btn-${tier}`);
+    buttons.forEach(btn => {
+      const amount = parseInt(btn.getAttribute('data-amount'));
+      btn.disabled = game.bots[tier] < amount;
+    });
+    
+    const input = document.getElementById(`sell_custom_${tier}`);
+    if(input){
+      input.max = Math.floor(game.bots[tier]);
+    }
+  });
+}
+
 function renderUpgrades(){
   const upgradesUI = document.getElementById("upgrades");
   if(!upgradesUI) return;
@@ -283,7 +315,7 @@ function renderUpgrades(){
     html += `</div>`;
     
     if(!owned){
-      html += `<button onclick="buyUpgrade('${id}')" ${!affordable?'disabled':''}>
+      html += `<button data-upgrade-btn="${id}" onclick="buyUpgrade('${id}')" ${!affordable?'disabled':''}>
         Purchase - $${u.cost.toLocaleString()}
       </button>`;
     }
@@ -319,7 +351,7 @@ function renderMarketplace(){
 
     html += `</div>`;
     if(!owned){
-      html += `<button onclick="buyTool('${id}')" ${!affordable?'disabled':''}>
+      html += `<button data-tool-btn="${id}" onclick="buyTool('${id}')" ${!affordable?'disabled':''}>
         Purchase - $${t.cost.toLocaleString()}
       </button>`;
     }
@@ -356,39 +388,16 @@ function renderSkills(){
 
     skillsUI.innerHTML += `
       <button
+        data-skill-btn="${s.key}"
         onclick="upgrade('${s.key}')"
         ${!canBuy ? "disabled" : ""}
       >
         ${s.label}<br>
         <span style="font-size:clamp(10px, 2vw, 11px); color:#8b949e;">
-          Level ${level} – $${cost.toLocaleString()}
+          Level ${level} — $${cost.toLocaleString()}
         </span>
       </button>
     `;
-  });
-}
-
-function renderAchievements(){
-  const ach = document.getElementById("achievements");
-  ach.innerHTML = "";
-  
-  achievements.forEach(a => {
-    const done = game.achievements[a.id] || a.check();
-    if(done && !game.achievements[a.id]) game.achievements[a.id] = true;
-    
-    let rewardText = "";
-    if(a.reward === "income") rewardText = `+${(a.bonus*100).toFixed(0)}% Income`;
-    else if(a.reward === "generation") rewardText = `+${(a.bonus*100).toFixed(0)}% Generation`;
-    else if(a.reward === "prestige") rewardText = `+${a.bonus} Effective Prestige`;
-    else if(a.reward === "click") rewardText = `+${(a.bonus*100).toFixed(0)}% Click Power`;
-    else if(a.reward === "cooldown") rewardText = `−${(a.bonus*100).toFixed(0)}% Cooldowns`;
-    else if(a.reward === "automation") rewardText = `+${(a.bonus*100).toFixed(0)}% Automation`;
-    else if(a.reward === "special") rewardText = `Special Effect`;
-    
-    ach.innerHTML += `<div class="achievement ${done?'done':''}">
-      <div class="achievement-text">${a.text}</div>
-      <div class="achievement-reward">${rewardText}</div>
-    </div>`;
   });
 }
 
@@ -402,12 +411,6 @@ function renderToolsInterface(){
            toolDef.clickable;
   });
 
-
-if(tools.unlocks && game.achievements[tools.unlocks] && !tool.notified){
-  notify("You already unlocked this tool via achievements. Purchase was unnecessary.");
-  tool.notified = true;
-}
-  
   if(ownedClickableTools.length === 0){
     toolsUI.innerHTML = `<div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; padding:10px; text-align:center;">
       No clickable tools purchased yet. Purchase clickable tools from marketplace to use them here.
@@ -532,16 +535,6 @@ function updateToolsInterfaceDynamic(){
   });
 }
 
-function getPrestigeBonus(){
-  let extraPrestige = 0;
-  for(const a of achievements){
-    if(game.achievements[a.id] && a.reward === "prestige"){
-      extraPrestige += a.bonus;
-    }
-  }
-  return game.prestige + extraPrestige;
-}
-
 function getCooldownReduction(){
   let reduction = 1;
   for(const a of achievements){
@@ -550,11 +543,6 @@ function getCooldownReduction(){
     }
   }
   return Math.max(0.1, reduction);
-}
-
-export function drawCharts(){
-  drawPieChart();
-  drawMoneyGraph();
 }
 
 function drawPieChart(){
@@ -778,9 +766,36 @@ function drawMoneyGraph(){
   };
 }
 
+function drawCharts(){
+  drawPieChart();
+  drawMoneyGraph();
+}
+
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
     drawCharts();
   }, 250);
 });
+
+export function markSkillsDirty() {
+  skillsDirty = true;
+}
+
+export function markMarketplaceDirty() {
+  marketplaceDirty = true;
+}
+
+export function markUpgradesDirty() {
+  upgradesDirty = true;
+}
+
+export function initUICosts() {
+  marketplaceDirty = true;
+  upgradesDirty = true;
+  skillsDirty = true;
+}
+
+window.markSkillsDirty = () => { skillsDirty = true; };
+window.markMarketplaceDirty = () => { marketplaceDirty = true; };
+window.markUpgradesDirty = () => { upgradesDirty = true; };
