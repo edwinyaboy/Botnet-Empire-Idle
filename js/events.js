@@ -17,7 +17,11 @@ export function showEvent(event){
 }
 
 export function acknowledgeEvent(){
+  if (!game.activeEvent) return;
+
   game.eventAcknowledged = true;
+  game.eventEndTime = Date.now() + game.eventDuration; // start timer now
+
   const modal = document.getElementById("eventModal");
   if (modal) {
     modal.innerHTML = "";
@@ -28,10 +32,11 @@ export function acknowledgeEvent(){
 export function triggerEvent(){
   const now = Date.now();
   
-  if(game.activeEvent && now >= game.eventEndTime){
+  if(game.activeEvent && game.eventAcknowledged && now >= game.eventEndTime){
     game.activeEvent = null;
     game.eventEffect = null;
     game.eventAcknowledged = false;
+    game.eventDuration = null;
   }
   
   if(!game.activeEvent && now >= game.nextEventTime){
@@ -43,11 +48,17 @@ export function triggerEvent(){
     
     const event = events[Math.floor(Math.random() * events.length)];
     game.activeEvent = event.type;
-    game.eventEndTime = now + event.duration;
+    game.eventDuration = event.duration;
     game.eventEffect = event.effect;
     game.eventAcknowledged = false;
+    game.eventEndTime = 0;
     game.nextEventTime = now + event.duration + (300000 + Math.random() * 300000);
     
     showEvent(event);
   }
+}
+
+export function getRemainingEventTime() {
+  if (!game.activeEvent || !game.eventAcknowledged) return 0;
+  return Math.max(0, game.eventEndTime - Date.now());
 }

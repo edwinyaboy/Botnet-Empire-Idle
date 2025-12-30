@@ -22,6 +22,7 @@ export function prestigeReset(){
     game.activeEvent = null;
     game.eventEffect = null;
     game.eventEndTime = 0;
+    game.eventDuration = null;
     game.eventAcknowledged = false;
     game.nextEventTime = Date.now() + (600000 + Math.random() * 1200000);
   }

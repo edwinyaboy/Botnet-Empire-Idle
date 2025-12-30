@@ -192,6 +192,7 @@ export function resetGame(){
     activeEvent:null,
     eventEndTime:0,
     eventEffect:null,
+    eventDuration:null,
     nextEventTime:Date.now() + (300000 + Math.random() * 300000),
     totalEarned:0,
     totalClicks:0,
