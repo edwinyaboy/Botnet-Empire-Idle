@@ -2,7 +2,7 @@ import { game, saveGame } from './state.js';
 import { tools } from './tools.js';
 
 export const upgrades = {
-  buildPC:{ name:"Brand New Computer", desc:"Build your first desktop with top of the line specs", cost:500, effect:"base_bots", value:200000 },
+  buildPC:{ name:"Brand New Computer", desc:"Build your first desktop with top of the line specs", cost:500, effect:"base_bots", value:2 },
   antenna:{ name:"External WiFi Antenna", desc:"Add an external WiFi antenna, providing more bots each time you spread your network.", cost:2500, type:"bots", base:25 },
   proxygambit:{ name:"ProxyGambit", desc:"This reverse GSM-to-TCP bridge device allows you to proxy from thousands of miles away, giving you even more bots each time you spread your network.", cost:5000, type:"bots", base:150 },
   ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Faster memory allows simultaneous intrusion handling.", cost:10000, effect:"base_bots", value:5 },
