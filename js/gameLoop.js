@@ -225,4 +225,5 @@ export function upgrade(skill){
       window.markSkillsDirty();
     }
   }
+
 }
