@@ -26,8 +26,8 @@ A browser-based hacker and botnet themed idle clicker game.
 - [ ] Crypto Market
 - [ ] Scraped Data Market
 - [ ] DDoS Minigame
-- [ ] Slots Minigame
 - [ ] Bug Fixes
+- [X] Slots Minigame
 - [X] Mo' Modular
 - [X] Mobile Compatibility (Should be good)
 - [X] Bot and Revenue Graphs
