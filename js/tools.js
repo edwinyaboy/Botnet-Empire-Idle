@@ -47,7 +47,7 @@ export const tools = {
   autoClick:{ name:"Automated Interaction Engine", desc:"Simulates repetitive actions to rapidly expand compromised systems", cost:5000, type:"bots", base:500 },
   phishMini:{ name:"Phishing Campaign Test", desc:"Deploys targeted social engineering attempts with optional manual execution", cost:10000, type:"bots", base:800, clickable:true, clickBonus:2000, clickCooldown:180 },
   payloadForge:{ name:"Payload Obfuscation Tool", desc:"Alters exploit signatures to bypass basic detection mechanisms", cost:12000, type:"bots", base:1100 },
-  marketScanner:{ name:"Red Pill", desc:"Track the next market price trend for Tier 3 bots (↑) or (↓)", cost:15000, value:1 },
+  marketScanner:{ name:"Red Pill", desc:"Track the next market price trend for Tier 3 bots (â†‘) or (â†“)", cost:15000, value:1 },
   credGrab:{ name:"Information Grabber", desc:"Collects stored usernames and passwords from compromised systems", cost:20000, type:"bots", base:1500 },
   botSeed:{ name:"Botnet Seeding Framework", desc:"Organizes newly compromised systems into a coordinated network", cost:30000, type:"bots", base:3000 },
   lateralMove:{ name:"Lateral Movement Module", desc:"Automatically pivots through internal networks after initial compromise", cost:40000, type:"bots", base:4500 },

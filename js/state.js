@@ -2,7 +2,7 @@ export const SAVE_KEY = "botnet_empire_v1";
 export const GRAPH_SAMPLE_INTERVAL = 10000;
 export const GRAPH_MAX_POINTS = 6048;
 
-export let game = JSON.parse(localStorage.getItem(SAVE_KEY)) || {
+export let game = {
   bots: { t1:0, t2:0, t3:0, mobile:0 },
   money:0,
   prestige:0,
@@ -21,6 +21,7 @@ export let game = JSON.parse(localStorage.getItem(SAVE_KEY)) || {
   activeEvent:null,
   eventEndTime:0,
   eventEffect:null,
+  eventDuration:null,
   nextEventTime:Date.now() + (300000 + Math.random() * 300000),
   totalEarned:0,
   totalClicks:0,

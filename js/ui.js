@@ -20,6 +20,8 @@ export function safeInt(n){
 }
 
 export function render() {
+  if (!document.getElementById("totalBots")) return;
+  
   const total = getTotalBots();
   document.getElementById("totalBots").textContent = Math.floor(total).toLocaleString();
   document.getElementById("money").textContent = Math.floor(game.money).toLocaleString();
@@ -31,19 +33,21 @@ export function render() {
   document.getElementById("bps").textContent = safeInt(bps);
   document.getElementById("mps").textContent = safeInt(mps);
   
-  document.getElementById("t1Count").textContent = Math.floor(game.bots.t1).toLocaleString();
-  document.getElementById("t2Count").textContent = Math.floor(game.bots.t2).toLocaleString();
-  document.getElementById("t3Count").textContent = Math.floor(game.bots.t3).toLocaleString();
+  document.getElementById("t1Count").textContent = Math.floor(game.bots.t1 || 0).toLocaleString();
+  document.getElementById("t2Count").textContent = Math.floor(game.bots.t2 || 0).toLocaleString();
+  document.getElementById("t3Count").textContent = Math.floor(game.bots.t3 || 0).toLocaleString();
   
   if (game.unlocks.mobile) {
     const mobileCountEl = document.getElementById("mobileCount");
     if (mobileCountEl) {
-      mobileCountEl.innerHTML = `<div style="margin-bottom:6px;">Mobile Devices<span class="tier-mobile">MOBILE</span>: <span style="color:#58a6ff; font-weight:600;">${Math.floor(game.bots.mobile).toLocaleString()}</span></div>`;
+      mobileCountEl.innerHTML = `<div style="margin-bottom:6px;">Mobile Devices<span class="tier-mobile">MOBILE</span>: <span style="color:#58a6ff; font-weight:600;">${Math.floor(game.bots.mobile || 0).toLocaleString()}</span></div>`;
     }
   } else {
     const mobileCountEl = document.getElementById("mobileCount");
     if (mobileCountEl) mobileCountEl.innerHTML = "";
   }
+  
+  if (window.slotsActive) return;
   
   const priceRollTime = 1800;
   const timeLeft = Math.max(0, priceRollTime - Math.floor((Date.now() - game.priceTime) / 1000));
@@ -218,6 +222,8 @@ function renderAchievements() {
 
 function renderSellInterface(){
   const sellUI = document.getElementById("sellInterface");
+  if (!sellUI) return;
+  
   sellUI.innerHTML = "";
   
   if(!game.prices){
@@ -247,7 +253,7 @@ function renderSellInterface(){
         <div class="sell-scroll-container">
           <div class="sell-scroll-buttons">
             ${amounts.map(amt => `
-              <button class="small sell-btn-${t.key}" data-amount="${amt}" onclick="sell('${t.key}', ${amt}); event.stopPropagation();" ${game.bots[t.key]<amt?'disabled':''}>
+              <button class="small sell-btn-${t.key}" data-amount="${amt}" onclick="sell('${t.key}', ${amt}); event.stopPropagation();" ${game.bots[t.key] < amt?'disabled':''}>
                 ${amt >= 1000000 ? (amt/1000000)+'M' : amt >= 1000 ? (amt/1000)+'k' : amt}
               </button>
             `).join('')}
@@ -255,7 +261,7 @@ function renderSellInterface(){
         </div>
       </div>
       <div class="custom-sell-container">
-        <input type="number" id="sell_custom_${t.key}" placeholder="Custom amount" min="1" max="${Math.floor(game.bots[t.key])}">
+        <input type="number" id="sell_custom_${t.key}" placeholder="Custom amount" min="1" max="${Math.floor(game.bots[t.key] || 0)}">
         <button class="small" onclick="sellCustom('${t.key}'); event.stopPropagation();">Sell Custom</button>
       </div>
     `;
@@ -279,12 +285,12 @@ function updateSellButtonStates(){
     const buttons = document.querySelectorAll(`.sell-btn-${tier}`);
     buttons.forEach(btn => {
       const amount = parseInt(btn.getAttribute('data-amount'));
-      btn.disabled = game.bots[tier] < amount;
+      btn.disabled = (game.bots[tier] || 0) < amount;
     });
     
     const input = document.getElementById(`sell_custom_${tier}`);
     if(input){
-      input.max = Math.floor(game.bots[tier]);
+      input.max = Math.floor(game.bots[tier] || 0);
     }
   });
 }
@@ -403,6 +409,8 @@ function renderSkills(){
 
 function renderToolsInterface(){
   const toolsUI = document.getElementById("toolsInterface");
+  if (!toolsUI) return;
+  
   const ownedClickableTools = Object.keys(game.tools).filter(id => {
     const tool = game.tools[id];
     const toolDef = tools[id];
@@ -580,12 +588,12 @@ function drawPieChart(){
   }
 
   const data = [
-    {label:"T1", value:game.bots.t1, color:"#6e7681", fullLabel:"T1 Premium"},
-    {label:"T2", value:game.bots.t2, color:"#58a6ff", fullLabel:"T2 Standard"},
-    {label:"T3", value:game.bots.t3, color:"#f85149", fullLabel:"T3 Basic"}
+    {label:"T1", value:game.bots.t1 || 0, color:"#6e7681", fullLabel:"T1 Premium"},
+    {label:"T2", value:game.bots.t2 || 0, color:"#58a6ff", fullLabel:"T2 Standard"},
+    {label:"T3", value:game.bots.t3 || 0, color:"#f85149", fullLabel:"T3 Basic"}
   ];
   if(game.unlocks.mobile && game.bots.mobile > 0) {
-    data.push({label:"Mobile", value:game.bots.mobile, color:"#ffc107", fullLabel:"Mobile"});
+    data.push({label:"Mobile", value:game.bots.mobile || 0, color:"#ffc107", fullLabel:"Mobile"});
   }
 
   let currentAngle = -Math.PI / 2;
@@ -658,17 +666,23 @@ function drawPieChart(){
         }
       }
     }
-    document.getElementById("pieTooltip").style.display = "none";
+    const tooltip = document.getElementById("pieTooltip");
+    if (tooltip) tooltip.style.display = "none";
   };
 
   canvas.onmouseleave = canvas.ontouchend = () => {
-    document.getElementById("pieTooltip").style.display = "none";
+    const tooltip = document.getElementById("pieTooltip");
+    if (tooltip) tooltip.style.display = "none";
   };
 }
 
 function showPieTooltip(e, segment, total){
   const tooltip = document.getElementById("pieTooltip");
+  if (!tooltip) return;
+  
   const canvas = document.getElementById("pieChart");
+  if (!canvas) return;
+  
   const rect = canvas.getBoundingClientRect();
 
   tooltip.style.display = "block";
@@ -684,7 +698,11 @@ function showPieTooltip(e, segment, total){
 
 function drawMoneyGraph(){
   const canvas = document.getElementById("moneyGraph");
+  if (!canvas) return;
+  
   const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  
   const rect = canvas.getBoundingClientRect();
   
   const displayWidth = rect.width;
@@ -741,6 +759,8 @@ function drawMoneyGraph(){
 
     if(index >= 0 && index < game.moneyGraph.length){
       const tooltip = document.getElementById("moneyTooltip");
+      if (!tooltip) return;
+      
       tooltip.style.display = "block";
       tooltip.style.left = (clientX - rect.left + 12) + "px";
       tooltip.style.top = (clientY - rect.top + 12) + "px";
@@ -762,11 +782,13 @@ function drawMoneyGraph(){
   };
 
   canvas.onmouseleave = canvas.ontouchend = () => {
-    document.getElementById("moneyTooltip").style.display = "none";
+    const tooltip = document.getElementById("moneyTooltip");
+    if (tooltip) tooltip.style.display = "none";
   };
 }
 
 function drawCharts(){
+  if (window.slotsActive) return;
   drawPieChart();
   drawMoneyGraph();
 }

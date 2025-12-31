@@ -22,6 +22,21 @@ h1 {
   color:#58a6ff;
   letter-spacing:0.5px;
 }
+#topNav {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  
+}
+#topNav button {
+  width: auto;
+  margin: 0;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
 .event-timer {
   position:fixed;
   top:80px;
@@ -519,5 +534,89 @@ canvas {
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  }
+}
+@keyframes spin {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100px); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px currentColor; }
+    50% { box-shadow: 0 0 30px currentColor; }
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-40px); opacity: 0; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.spinning { animation: spin 0.1s infinite linear; }
+.shake { animation: shake 0.3s ease; }
+.flash { animation: flash 0.5s ease 2; }
+.glow { animation: glow 0.5s ease infinite; }
+.pulse { animation: pulse 0.5s ease 2; }
+
+@media (max-width: 768px) {
+    .slot-machine-page .reel {
+        height: 80px !important;
+    }
+    
+    .slot-machine-page .symbol {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .slot-machine-page .slot-btn {
+        min-width: 120px !important;
+        padding: 10px !important;
+    }
+}
+/* Add to style.css */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+header h1 {
+  flex: 1;
+  min-width: 300px;
+}
+
+#topNav {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  #topNav {
+    align-self: flex-end;
+    margin-top: 0;
   }
 }

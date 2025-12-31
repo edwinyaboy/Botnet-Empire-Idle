@@ -8,6 +8,7 @@ import { prestigeReset } from './prestige.js';
 import { showEvent, acknowledgeEvent, triggerEvent } from './events.js';
 import { render, setupEventListeners, initUICosts } from './ui.js';
 import { exportSave, importSave, resetGame, update as gameUpdate, upgrade } from './gameLoop.js';
+import { enterSlots } from './slots.js';
 
 export { game };
 
@@ -27,6 +28,8 @@ window.addEventListener('load', () => {
       if(!game.upgrades) game.upgrades = {};
       if(!game.tools) game.tools = {};
       if(!game.achievements) game.achievements = {};
+      if(!game.bots) game.bots = { t1:0, t2:0, t3:0, mobile:0 };
+      if(!game.unlocks) game.unlocks = { mobile:false };
     } catch(e) {
       console.error("Error loading save:", e);
     }
@@ -110,5 +113,5 @@ window.showEvent = showEvent;
 window.acknowledgeEvent = acknowledgeEvent;
 window.exportSave = exportSave;
 window.importSave = importSave;
-
 window.resetGame = resetGame;
+window.enterSlots = enterSlots;
