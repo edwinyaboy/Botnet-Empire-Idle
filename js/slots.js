@@ -121,7 +121,7 @@ class HackerSlots {
         `;
         
         const title = document.createElement('h2');
-        title.innerHTML = '🎰 HACKER SLOTS';
+        title.innerHTML = '🎰 SLOTS';
         title.style.cssText = 'color: #58a6ff; margin: 0; font-size: clamp(18px, 4vw, 24px);';
         
         this.elements.stats = document.createElement('div');
