@@ -15,6 +15,8 @@ A browser-based hacker and botnet themed idle clicker game.
 
 ⚠️ **Still in development — expect bugs!** Please report issues or suggestions.
 
+⚠️ If "Spread Network" isn't working, you may have to "Reset All Data" (Button on the bottom). This is due to new updates.
+
 ---
 
 ## Update List
