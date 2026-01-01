@@ -28,7 +28,7 @@ A browser-based hacker and botnet themed idle clicker game.
 - [ ] Scraped Data Market
 - [ ] DDoS Minigame
 - [X] Bug Fixes
-- [X] Version Migration
+- [X] Version Migration (If your game is not working, try using CTRL+Shift+R or clearing your browsers cache)
 - [X] Player Friendly Terminology
 - [X] Slots Minigame
 - [X] Mo' Modular
