@@ -14,6 +14,11 @@ header {
   padding:20px 30px;
   background:#161b22;
   border-bottom:1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 h1 { 
   margin:0; 
@@ -21,12 +26,14 @@ h1 {
   font-weight:600;
   color:#58a6ff;
   letter-spacing:0.5px;
+  flex: 1;
+  min-width: 300px;
 }
 #topNav {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
-  
+  margin-top: 0;
+  flex-shrink: 0;
 }
 #topNav button {
   width: auto;
@@ -394,15 +401,6 @@ canvas {
   background:#58a6ff;
   transition:width 0.1s linear;
 }
-#market {
-  pointer-events: auto;
-}
-
-#market button {
-  pointer-events: auto;
-  position: relative;
-  z-index: 2;
-}
 .modal-overlay {
   position:fixed;
   top:0;
@@ -413,7 +411,7 @@ canvas {
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:1000;
+  z-index:10000;
   animation:fadeIn 0.2s;
   padding:20px;
   pointer-events:all;
@@ -433,17 +431,6 @@ canvas {
 @keyframes fadeIn {
   from { opacity:0; }
   to { opacity:1; }
-}
-.modal {
-  background:#161b22;
-  border:1px solid #30363d;
-  border-radius:6px;
-  padding:clamp(16px, 4vw, 24px);
-  max-width:600px;
-  width:100%;
-  box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  max-height:80vh;
-  overflow-y:auto;
 }
 .modal-title {
   font-size:clamp(14px, 3vw, 16px);
@@ -531,92 +518,87 @@ canvas {
 .tool-panel.active {
   display:block;
 }
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
-  }
-}
 @keyframes spin {
     0% { transform: translateY(0); }
     100% { transform: translateY(-100px); }
 }
-
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
-
 @keyframes flash {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
 }
-
 @keyframes glow {
     0%, 100% { box-shadow: 0 0 10px currentColor; }
     50% { box-shadow: 0 0 30px currentColor; }
 }
-
 @keyframes floatUp {
     0% { transform: translateY(0); opacity: 1; }
     100% { transform: translateY(-40px); opacity: 0; }
 }
-
 @keyframes pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
 }
-
 .spinning { animation: spin 0.1s infinite linear; }
 .shake { animation: shake 0.3s ease; }
 .flash { animation: flash 0.5s ease 2; }
 .glow { animation: glow 0.5s ease infinite; }
 .pulse { animation: pulse 0.5s ease 2; }
-
-@media (max-width: 768px) {
-    .slot-machine-page .reel {
-        height: 80px !important;
-    }
-    
-    .slot-machine-page .symbol {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 0.8rem !important;
-    }
-    
-    .slot-machine-page .slot-btn {
-        min-width: 120px !important;
-        padding: 10px !important;
-    }
-}
-/* Add to style.css */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-header h1 {
-  flex: 1;
-  min-width: 300px;
-}
-
-#topNav {
-  margin-top: 0;
-  flex-shrink: 0;
-}
-
 @media (max-width: 768px) {
   header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
   #topNav {
     align-self: flex-end;
-    margin-top: 0;
   }
+  .stats-grid {
+    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .slot-machine-page .reel {
+    height: 80px !important;
+  }
+  .slot-machine-page .symbol {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 0.8rem !important;
+  }
+  .slot-machine-page .slot-btn {
+    min-width: 120px !important;
+    padding: 10px !important;
+  }
+}
+.slots-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.slot-stat-box {
+  background: #0d1117;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #30363d;
+  font-size: clamp(10px, 1.8vw, 11px);
+}
+
+.slot-stat-label {
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+
+.slot-stat-value {
+  color: #58a6ff;
+  font-weight: 600;
+  font-size: clamp(12px, 2.2vw, 14px);
+}
+
+.slot-stat-value.free-spins {
+  color: #f85149;
 }

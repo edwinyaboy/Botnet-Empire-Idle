@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<title>Botnet Empire Idle — Botnet Dashboard</title>
+<title>Botnet Empire Idle</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Botnet Empire Idle — build and manage an ever-growing botnet, upgrade tools, trade on the dark web marketplace, prestige for bonuses. Browser-based idle game.">
+<meta name="description" content="Botnet Empire Idle – build and manage an ever-growing botnet, upgrade tools, trade on the dark web marketplace, prestige for bonuses. Browser-based idle game.">
 <meta name="keywords" content="idle game, botnet idle, idle clicker, incremental game, hacking game, browser game">
 <meta name="author" content="Shrine">
 <meta name="robots" content="index, follow">
@@ -18,13 +18,13 @@
 <meta name="theme-color" content="#0d1117">
 <link rel="mask-icon" href="images/favicon.svg" color="#0d1117">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Botnet Empire Idle — Botnet Dashboard">
+<meta property="og:title" content="Botnet Empire Idle – Botnet Dashboard">
 <meta property="og:description" content="Build and manage a botnet, buy upgrades, and prestige for long-term bonuses in this browser idle game.">
 <meta property="og:image" content="https://raw.githubusercontent.com/edwinyaboy/Botnet-Empire-Idle/main/screenshot.png">
 <meta property="og:url" content="https://edwinyaboy.github.io/Botnet-Empire-Idle/">
 <meta property="og:site_name" content="Botnet Empire Idle">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Botnet Empire Idle — Botnet Dashboard">
+<meta name="twitter:title" content="Botnet Empire Idle – Botnet Dashboard">
 <meta name="twitter:description" content="Build and manage a botnet, buy upgrades, and prestige for long-term bonuses in this browser idle game.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/edwinyaboy/Botnet-Empire-Idle/main/screenshot.png">
 <meta name="twitter:site" content="@Shrine">
@@ -49,67 +49,47 @@
 </head>
 <body>
 <header>
-  <h1>BOTNET EMPIRE IDLE - BOTNET DASHBOARD</h1>
-  <nav id="topNav">
-      <button onclick="enterSlots()" class="primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="5" width="20" height="14" rx="2"/>
-          <line x1="8" y1="2" x2="8" y2="5"/>
-          <line x1="16" y1="2" x2="16" y2="5"/>
-          <line x1="12" y1="2" x2="12" y2="5"/>
-          <line x1="8" y1="19" x2="8" y2="22"/>
-          <line x1="16" y1="19" x2="16" y2="22"/>
-          <line x1="12" y1="19" x2="12" y2="22"/>
-          <path d="M8 9h2v2H8z"/>
-          <path d="M11 9h2v2h-2z"/>
-          <path d="M14 9h2v2h-2z"/>
-          <path d="M8 13h2v2H8z"/>
-          <path d="M11 13h2v2h-2z"/>
-          <path d="M14 13h2v2h-2z"/>
-        </svg>
-        <span>Slots</span>
-      </button>
-    </nav>
+  <h1>BOTNET EMPIRE IDLE</h1>
 </header>
 <div id="eventTimer" class="event-timer" style="display:none;"></div>
-<div id="eventModal"></div>
-<div id="tutorialModal"></div>
+<div id="eventModal" style="display:none;"></div>
+<div id="tutorialModal" style="display:none;"></div>
 <div class="container">
   <div class="panel" style="margin-bottom:24px;">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Bots</div>
+        <div class="stat-label" title="The total number of computers you have hacked so far">Computers Hacked</div>
         <div class="stat-value" id="totalBots">0</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Available Funds</div>
+        <div class="stat-label" title="How much cash you have available to spend">Available Cash</div>
         <div class="stat-value">$<span id="money">0</span></div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Prestige Level</div>
+        <div class="stat-label" title="Your current prestige level, which permanently boosts future progress">Prestige Level</div>
         <div class="stat-value" id="prestige">0</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Bot Generation</div>
+        <div class="stat-label" title="How many computers are hacked automatically every second">T3 Computers Hacked Per Second</div>
         <div class="stat-value"><span id="bps">0</span>/s</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Income Rate</div>
+        <div class="stat-label" title="How much cash you earn automatically every second">Cash Earned Per Second</div>
         <div class="stat-value">$<span id="mps">0</span>/s</div>
       </div>
     </div>
   </div>
   <div class="grid">
     <div class="panel" id="exploitPanel">
-      <h3>Device Exploitation</h3>
-      <button class="primary" id="spreadBtn">Spread Network</button>
+      <h3>Control Panel</h3>
+      <button class="primary" id="spreadBtn">Spread Virus</button>
       <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-top:12px; margin-bottom:12px;">
-        Click or hold Spread Network to spread your executable for bots.<br />Use your purchased tools below to generate even more bots.
+        Click or Hold <strong>Spread Virus</strong> to take over computers. Sell them for cash and buy upgrades to grow even faster.
       </div>
       <div id="toolsInterface"></div>
     </div>
     <div class="panel">
-      <h3>Bot Distribution</h3>
+      <h3>Hacked Computer Tiers</h3>
       <div class="graph-container">
         <canvas id="pieChart"></canvas>
         <div id="pieTooltip" class="tooltip"></div>
@@ -117,31 +97,33 @@
     </div>
   </div>
   <div class="panel">
-    <h3>Total Earnings Over Time (Since Prestige)</h3>
+    <h3>Total Cash Earnings Over Time Since Last Prestige</h3>
     <div class="graph-container">
       <canvas id="moneyGraph"></canvas>
       <div id="moneyTooltip" class="tooltip"></div>
     </div>
   </div>
   <div class="grid">
-    <div class="panel">
-      <h3>Bot Inventory</h3>
-      <div style="font-size:clamp(11px, 2.2vw, 12px); margin-bottom:8px;">
-        <div style="margin-bottom:6px;">T1 Premium<span class="tier-t1">TIER 1</span>: <span style="color:#58a6ff; font-weight:600;" id="t1Count">0</span></div>
-        <div style="margin-bottom:6px;">T2 Standard<span class="tier-t2">TIER 2</span>: <span style="color:#58a6ff; font-weight:600;" id="t2Count">0</span></div>
-        <div style="margin-bottom:6px;">T3 Basic<span class="tier-t3">TIER 3</span>: <span style="color:#58a6ff; font-weight:600;" id="t3Count">0</span></div>
-        <div id="mobileCount"></div>
-      </div>
+  <div class="panel" id="marketPanel">
+    <h3>Sell Hacked Computers</h3>
+    <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:12px;">
+      Next update: <span id="priceTimer">--:--</span>
     </div>
-    <div class="panel" id="marketPanel">
-      <h3>Market Exchange Rates</h3>
-      <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:12px;">
-        Next update: <span id="priceTimer">--:--</span>
+    <div id="sellInterface"></div>
+  </div>
+  
+    <div class="panel">
+      <h3>Minigames</h3>
+      <button class="primary" onclick="enterSlots()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; width: 100%; margin-bottom:12px;">
+        <img src="images/slots.svg" alt="Slots" width="20" height="20" style="display: block;">
+        <span>Play Slots</span>
+      </button>
+      <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:12px; text-align: center;">
+        More minigames coming soon!
       </div>
-      <div id="sellInterface"></div>
     </div>
   </div>
-  <div class="panel" id="marketplacePanel">
+  <div class="panel" id="upgradesPanel">
     <h3>Equipment Upgrades</h3>
     <div class="scrollable" id="upgrades"></div>
   </div>
@@ -166,7 +148,7 @@
       </div>
       <button class="primary" id="prestigeBtn">Execute Prestige Reset</button>
       <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-top:12px;">
-        Requires: 8.2B total bots<br>
+        Requires: 8.2B total hacked computers<br>
         Current Bonuses: +<span id="prestigeBonus">0</span>% income
       </div>
     </div>

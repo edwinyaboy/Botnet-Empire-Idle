@@ -2,8 +2,7 @@ import { game, saveGame } from './state.js';
 import { getTotalBots, getAchievementBonus } from './bots.js';
 import { achievements } from './achievements.js';
 import { upgrades } from './upgrades.js';
-import { triggerEvent } from './events.js';
-import { calculateBPS, calculateMPS, upgrade, getPrestigeBonus } from './gameLoop.js';
+import { calculateBPS, calculateMPS, upgrade, getPrestigeBonus, PRICE_ROLL_TIME } from './gameLoop.js';
 import { clickTool, tools } from './tools.js';
 
 let lastPriceUpdate = 0;
@@ -33,24 +32,9 @@ export function render() {
   document.getElementById("bps").textContent = safeInt(bps);
   document.getElementById("mps").textContent = safeInt(mps);
   
-  document.getElementById("t1Count").textContent = Math.floor(game.bots.t1 || 0).toLocaleString();
-  document.getElementById("t2Count").textContent = Math.floor(game.bots.t2 || 0).toLocaleString();
-  document.getElementById("t3Count").textContent = Math.floor(game.bots.t3 || 0).toLocaleString();
-  
-  if (game.unlocks.mobile) {
-    const mobileCountEl = document.getElementById("mobileCount");
-    if (mobileCountEl) {
-      mobileCountEl.innerHTML = `<div style="margin-bottom:6px;">Mobile Devices<span class="tier-mobile">MOBILE</span>: <span style="color:#58a6ff; font-weight:600;">${Math.floor(game.bots.mobile || 0).toLocaleString()}</span></div>`;
-    }
-  } else {
-    const mobileCountEl = document.getElementById("mobileCount");
-    if (mobileCountEl) mobileCountEl.innerHTML = "";
-  }
-  
   if (window.slotsActive) return;
   
-  const priceRollTime = 1800;
-  const timeLeft = Math.max(0, priceRollTime - Math.floor((Date.now() - game.priceTime) / 1000));
+  const timeLeft = Math.max(0, Math.floor((game.priceTime + PRICE_ROLL_TIME - Date.now()) / 1000));
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
   const priceTimerEl = document.getElementById("priceTimer");
@@ -118,6 +102,15 @@ export function render() {
     lastToolsState = toolsStateKey;
   } else {
     updateToolsInterfaceDynamic();
+  }
+  
+  if (game.priceTime !== lastPriceUpdate || game.unlocks.mobile !== lastMobileState) {
+    renderSellInterface();
+    lastPriceUpdate = game.priceTime;
+    lastMobileState = game.unlocks.mobile;
+  } else {
+    updateBotCounts();
+    updateSellButtonStates();
   }
   
   renderAchievements();
@@ -220,68 +213,76 @@ function renderAchievements() {
   }
 }
 
-function renderSellInterface(){
+function renderSellInterface() {
   const sellUI = document.getElementById("sellInterface");
-  if (!sellUI) return;
-  
+  if(!sellUI) return;
+
   sellUI.innerHTML = "";
-  
-  if(!game.prices){
+
+  if(!game.prices) {
     game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
     game.priceTime = Date.now();
   }
-  
+
   const tiers = [
-    {key:"t1", label:"T1 Premium", price:game.prices.t1},
-    {key:"t2", label:"T2 Standard", price:game.prices.t2},
-    {key:"t3", label:"T3 Basic", price:game.prices.t3}
+    { key:"t1", label:"TIER 1 PREMIUM", price:game.prices.t1, count:game.bots.t1 || 0 },
+    { key:"t2", label:"TIER 2 STANDARD", price:game.prices.t2, count:game.bots.t2 || 0 },
+    { key:"t3", label:"TIER 3 BASIC", price:game.prices.t3, count:game.bots.t3 || 0 }
   ];
-  
-  if(game.unlocks.mobile) tiers.push({key:"mobile", label:"Mobile", price:game.prices.mobile});
-  
+
+  if(game.unlocks.mobile) tiers.push({ key:"mobile", label:"Mobile", price:game.prices.mobile, count:game.bots.mobile || 0 });
+
   tiers.forEach(t => {
-    const amounts = [100, 250, 500, 1000, 10000, 25000, 50000, 100000, 250000, 1000000, 5000000, 250000000, 500000000];
-    
+    const amounts = [1, 5, 10, 50, 100, 250, 500, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 5000000, 100000000, 250000000, 500000000, 1000000000];
     const tierDiv = document.createElement('div');
     tierDiv.className = 'sell-tier';
     tierDiv.innerHTML = `
       <div class="sell-tier-header">
-        <div class="sell-tier-name">${t.label}</div>
-        <div class="sell-tier-price">$${t.price.toFixed(3)}/bot</div>
+        <div class="sell-tier-name">${t.label} - <span id="bot-count-${t.key}" class="bot-count-display">${Math.floor(t.count).toLocaleString()}</span></div>
+        <div class="sell-tier-price">$${t.price.toFixed(3)} EACH</div>
       </div>
       <div class="sell-buttons-row">
         <div class="sell-scroll-container">
           <div class="sell-scroll-buttons">
-            ${amounts.map(amt => `
-              <button class="small sell-btn-${t.key}" data-amount="${amt}" onclick="sell('${t.key}', ${amt}); event.stopPropagation();" ${game.bots[t.key] < amt?'disabled':''}>
-                ${amt >= 1000000 ? (amt/1000000)+'M' : amt >= 1000 ? (amt/1000)+'k' : amt}
-              </button>
-            `).join('')}
+            ${amounts.map(amt => `<button class="small sell-btn-${t.key}" data-amount="${amt}" onclick="sell('${t.key}', ${amt}); event.stopPropagation();" ${t.count < amt ? 'disabled' : ''}>${amt >= 1000000 ? (amt/1000000)+'M' : amt >= 1000 ? (amt/1000)+'k' : amt}</button>`).join('')}
           </div>
         </div>
       </div>
       <div class="custom-sell-container">
-        <input type="number" id="sell_custom_${t.key}" placeholder="Custom amount" min="1" max="${Math.floor(game.bots[t.key] || 0)}">
+        <input type="number" id="sell_custom_${t.key}" placeholder="Custom amount" min="1" max="${Math.floor(t.count)}">
         <button class="small" onclick="sellCustom('${t.key}'); event.stopPropagation();">Sell Custom</button>
       </div>
     `;
-    
     sellUI.appendChild(tierDiv);
-    
+
     const input = document.getElementById(`sell_custom_${t.key}`);
     if(input){
-      ['click', 'focus', 'mousedown', 'touchstart'].forEach(evt => {
-        input.addEventListener(evt, (e) => e.stopPropagation(), {passive: true});
+      ['click','focus','mousedown','touchstart'].forEach(evt => {
+        input.addEventListener(evt, e => e.stopPropagation(), {passive:true});
       });
     }
   });
 }
 
-function updateSellButtonStates(){
+function updateBotCounts() {
   const tiers = ['t1', 't2', 't3'];
   if(game.unlocks.mobile) tiers.push('mobile');
   
   tiers.forEach(tier => {
+    const countElement = document.getElementById(`bot-count-${tier}`);
+    if (countElement) {
+      const currentCount = Math.floor(game.bots[tier] || 0);
+      countElement.textContent = currentCount.toLocaleString();
+    }
+  });
+}
+
+function updateSellButtonStates() {
+  const tiers = ['t1', 't2', 't3'];
+  if(game.unlocks.mobile) tiers.push('mobile');
+  
+  tiers.forEach(tier => {
+    
     const buttons = document.querySelectorAll(`.sell-btn-${tier}`);
     buttons.forEach(btn => {
       const amount = parseInt(btn.getAttribute('data-amount'));
@@ -314,9 +315,9 @@ function renderUpgrades(){
       </div>
       <div class="tool-desc">${u.desc}`;
     
-    if(u.effect === "base_bots") html += ` - ${u.value} T3 bots/sec`;
+    if(u.effect === "base_bots") html += ` - ${u.value} Tier 3 hacked computers per second`;
     if(u.effect === "sell_price") html += ` - +${(u.value*100).toFixed(0)}% sell price`;
-    if(u.effect === "market_info") html += ` - Shows T3 price trends`;
+    if(u.effect === "market_info") html += ` - Shows price trends (↑) or (↓) for Tier 3 hacked computers`;
     
     html += `</div>`;
     
@@ -350,8 +351,8 @@ function renderMarketplace(){
       </div>
       <div class="tool-desc">${t.desc}`;
 
-    if(t.type === "bots") html += ` - ${t.base} T3 bots/sec`;
-    if(t.type === "money") html += ` - $${t.base}/sec`;
+    if(t.type === "bots") html += ` - Gains an additional ${t.base} Tier 3 hacked computers per second`;
+    if(t.type === "money") html += ` - Earns $${t.base} per second`;
     if(t.clickable) html += ` - Clickable`;
     if(t.unlocks === "mobile") html += ` - Unlocks Mobile Infrastructure`;
 
@@ -372,10 +373,10 @@ function renderSkills(){
   if(!skillsUI) return;
 
   const skillDefs = [
-    {key:"tiers", label:"Bot Tier Distribution", desc:"+5% better tier chances"},
-    {key:"prices", label:"Market Efficiency", desc:"+10% sell prices"},
-    {key:"generation", label:"Bot Generation Rate", desc:"+10% passive generation"},
-    {key:"automation", label:"Automation Efficiency", desc:"+5% tool effectiveness"}
+    {key:"tiers", label:"Hacked Computer Tier Distribution", desc:"+5% Better Tier Chance"},
+    {key:"prices", label:"Market Efficiency", desc:"+10% Sell Prices"},
+    {key:"generation", label:"Hacked Computers Generation Rate", desc:"+10% Automatically Hacked Computers"},
+    {key:"automation", label:"Automation Efficiency", desc:"+5% Dark Web Tool Effectiveness"}
   ];
 
   const baseCosts = {
@@ -395,10 +396,14 @@ function renderSkills(){
     skillsUI.innerHTML += `
       <button
         data-skill-btn="${s.key}"
+        title="${s.desc}"
         onclick="upgrade('${s.key}')"
         ${!canBuy ? "disabled" : ""}
       >
         ${s.label}<br>
+        <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-top:2px;">
+          ${s.desc}
+        </div>
         <span style="font-size:clamp(10px, 2vw, 11px); color:#8b949e;">
           Level ${level} — $${cost.toLocaleString()}
         </span>
@@ -410,19 +415,19 @@ function renderSkills(){
 function renderToolsInterface(){
   const toolsUI = document.getElementById("toolsInterface");
   if (!toolsUI) return;
-  
+
   const ownedClickableTools = Object.keys(game.tools).filter(id => {
     const tool = game.tools[id];
     const toolDef = tools[id];
-    return tool !== undefined && 
-           toolDef && 
-           toolDef.clickable;
+    return tool !== undefined && toolDef && toolDef.clickable;
   });
 
-  if(ownedClickableTools.length === 0){
-    toolsUI.innerHTML = `<div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; padding:10px; text-align:center;">
-      No clickable tools purchased yet. Purchase clickable tools from marketplace to use them here.
-    </div>`;
+  if (ownedClickableTools.length === 0) {
+    toolsUI.innerHTML = `
+      <div style="font-size:clamp(10px,2vw,11px); color:#8b949e;">
+        You don't have any active tools yet.<br />
+        Buy tools from the dark web marketplace below to use them here.
+      </div>`;
     return;
   }
 
@@ -432,8 +437,7 @@ function renderToolsInterface(){
 
   let html = '<div class="tool-tabs">';
   ownedClickableTools.forEach(id => {
-    html += `<div class="tool-tab ${game.activeToolTab===id?'active':''}" 
-                    data-tool-id="${id}">
+    html += `<div class="tool-tab ${game.activeToolTab===id?'active':''}" data-tool-id="${id}">
       ${tools[id].name.split(' ')[0]}
     </div>`;
   });
@@ -445,44 +449,37 @@ function renderToolsInterface(){
     const cd = game.clickCooldowns[id] || 0;
     const clicks = owned.clicks || 0;
     const cooldownReduction = getCooldownReduction();
-    
+
     html += `<div class="tool-panel ${game.activeToolTab===id?'active':''}" data-tool-id="${id}">
       <div style="margin-bottom:12px;">
-        <div style="font-size:clamp(11px, 2.5vw, 13px); font-weight:600; color:#58a6ff; margin-bottom:4px;">
+        <div style="font-size:clamp(11px,2.5vw,13px); font-weight:600; color:#58a6ff; margin-bottom:4px;">
           ${t.name}
         </div>
-        <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:8px;">
+        <div style="font-size:clamp(10px,2vw,11px); color:#8b949e; margin-bottom:8px;">
           ${t.desc}
         </div>
       </div>`;
 
     const isOnCooldown = cd > 0;
-    const cooldownWidth = isOnCooldown ? 
-      (1 - cd / (t.clickCooldown * cooldownReduction)) * 100 : 0;
-    
+    const cooldownWidth = isOnCooldown ? (1 - cd / (t.clickCooldown * cooldownReduction)) * 100 : 0;
+
     html += `
-		<button data-tool-click="${id}" 
-          data-click-btn="${id}" 
-          ${isOnCooldown ? 'disabled' : ''}
-          style="margin-bottom:8px;">
+      <button data-tool-click="${id}" data-click-btn="${id}" ${isOnCooldown?'disabled':''} style="margin-bottom:8px;">
         <span data-click-text="${id}">
-          Execute Bonus (${clicks}/50)${isOnCooldown ? ' - ' + Math.ceil(cd) + 's' : ''}
+          Execute Bonus (${clicks}/50)${isOnCooldown?' - '+Math.ceil(cd)+'s':''}
         </span>
       </button>
-      <div class="cooldown-bar" data-cooldown-bar="${id}" style="${isOnCooldown ? '' : 'display:none'}">
-        <div class="cooldown-fill" 
-             data-cooldown-fill="${id}" 
-             style="width:${cooldownWidth}%"></div>
+      <div class="cooldown-bar" data-cooldown-bar="${id}" style="${isOnCooldown?'':'display:none'}">
+        <div class="cooldown-fill" data-cooldown-fill="${id}" style="width:${cooldownWidth}%"></div>
       </div>
-      
-      <div style="margin-top:12px; font-size:clamp(10px, 1.8vw, 10px); color:#8b949e;">
-        <div><strong>Click Bonus:</strong> ${t.type === "bots" ? t.clickBonus.toLocaleString() + " bots" : "$" + t.clickBonus.toLocaleString()}</div>
+      <div style="margin-top:12px; font-size:clamp(10px,1.8vw,10px); color:#8b949e;">
+        <div><strong>Click Bonus:</strong> ${t.type==="bots"?t.clickBonus.toLocaleString()+" bots":"$"+t.clickBonus.toLocaleString()}</div>
         <div><strong>Cooldown:</strong> ${t.clickCooldown} seconds</div>
-        ${cooldownReduction < 1 ? `<div><strong>Cooldown Reduction:</strong> ${Math.round((1 - cooldownReduction) * 100)}%</div>` : ''}
+        ${cooldownReduction<1?`<div><strong>Cooldown Reduction:</strong> ${Math.round((1-cooldownReduction)*100)}%</div>`:''}
       </div>
     </div>`;
   });
-  
+
   toolsUI.innerHTML = html;
 }
 
@@ -583,7 +580,7 @@ function drawPieChart(){
     ctx.fillStyle = "#8b949e";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("No bots acquired", centerX, centerY);
+    ctx.fillText("No hacked computers acquired", centerX, centerY);
     return;
   }
 
@@ -691,7 +688,7 @@ function showPieTooltip(e, segment, total){
 
   tooltip.innerHTML = `
     <div class="tooltip-label">${segment.fullLabel}</div>
-    <div class="tooltip-value">${Math.floor(segment.value).toLocaleString()} bots</div>
+    <div class="tooltip-value">${Math.floor(segment.value).toLocaleString()} Hacked Computers</div>
     <div class="tooltip-label">${((segment.value/total)*100).toFixed(1)}%</div>
   `;
 }

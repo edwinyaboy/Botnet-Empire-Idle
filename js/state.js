@@ -3,6 +3,7 @@ export const GRAPH_SAMPLE_INTERVAL = 10000;
 export const GRAPH_MAX_POINTS = 6048;
 
 export let game = {
+  version: '1.1.3',
   bots: { t1:0, t2:0, t3:0, mobile:0 },
   money:0,
   prestige:0,
@@ -35,8 +36,19 @@ export let game = {
 export function saveGame() {
   try {
     game.lastTick = Date.now();
-    const saveData = JSON.stringify(game);
-    localStorage.setItem(SAVE_KEY, saveData);
+    game.version = '1.1.3';
+    
+    if (!game.bots) game.bots = { t1:0, t2:0, t3:0, mobile:0 };
+    if (!game.skills) game.skills = { tiers:0, prices:0, generation:0, automation:0 };
+    if (!game.prices) game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
+    if (!game.unlocks) game.unlocks = { mobile:false };
+    if (!game.clickCooldowns) game.clickCooldowns = {};
+    if (!game.moneyGraph) game.moneyGraph = [];
+    if (game.eventAcknowledged === undefined) game.eventAcknowledged = false;
+    if (game.priceDirection === undefined) game.priceDirection = 0;
+    if (!game.priceTime) game.priceTime = Date.now();
+    
+    localStorage.setItem(SAVE_KEY, JSON.stringify(game));
   } catch(e) {
     console.error("Error saving game:", e);
   }

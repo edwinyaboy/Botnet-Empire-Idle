@@ -2,16 +2,17 @@ import { game, saveGame } from './state.js';
 import { tools } from './tools.js';
 
 export const upgrades = {
-  buildPC:{ name:"Brand New Computer", desc:"Build your first desktop with top of the line specs", cost:500, effect:"base_bots", value:2 },
-  antenna:{ name:"External WiFi Antenna", desc:"Add an external WiFi antenna, providing more bots each time you spread your network.", cost:2500, type:"bots", base:25 },
-  proxygambit:{ name:"ProxyGambit", desc:"This reverse GSM-to-TCP bridge device allows you to proxy from thousands of miles away, giving you even more bots each time you spread your network.", cost:5000, type:"bots", base:150 },
-  ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Faster memory allows simultaneous intrusion handling.", cost:10000, effect:"base_bots", value:5 },
-  ssdUpgrade:{ name:"NVMe Storage Array", desc:"Rapid payload deployment reduces execution delays.", cost:20000, effect:"base_bots", value:10 },
-  osHardening:{ name:"Custom Hardened OS", desc:"Optimized operating system tuned for automation workloads.", cost:60000, effect:"base_bots", value:25 },
-  networkStack:{ name:"Optimized Network Stack", desc:"Reduces packet loss and improves sustained bot throughput.", cost:500000, effect:"base_bots", value:150 },
-  serverRack:{ name:"Dedicated Server Rack", desc:"Enterprise-grade hardware massively increases baseline operations.", cost:1500000, effect:"base_bots", value:400 },
-  ai:{ name:"Autonomous Spread Controller", desc:"AI-assisted decision making maximizes manual expansion efficiency.", cost:5000000, type:"bots", base:12000 }
+buildPC:{ name:"Brand New Computer", desc:"Your first custom-built desktop for running operations", cost:500, effect:"base_bots", value:2 },
+antenna:{ name:"External WiFi Antenna", desc:"Improves signal reach when expanding your network", cost:2500, type:"bots", base:25 },
+proxygambit:{ name:"ProxyGambit", desc:"Routes traffic through distant relays to expand safely", cost:5000, type:"bots", base:150 },
+ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Handles more tasks at once without slowdowns", cost:10000, effect:"base_bots", value:5 },
+ssdUpgrade:{ name:"NVMe Storage Array", desc:"Faster storage speeds up payload execution", cost:20000, effect:"base_bots", value:10 },
+osHardening:{ name:"Custom Hardened OS", desc:"Streamlined system built for automation workloads", cost:60000, effect:"base_bots", value:25 },
+networkStack:{ name:"Optimized Network Stack", desc:"Improves data flow and long-term stability", cost:500000, effect:"base_bots", value:150 },
+serverRack:{ name:"Dedicated Server Rack", desc:"Enterprise hardware massively boosts operations", cost:1500000, effect:"base_bots", value:400 },
+ai:{ name:"Autonomous Spread Controller", desc:"Smart automation improves manual expansion efficiency", cost:5000000, type:"bots", base:12000 }
 };
+
 
 let purchaseInProgress = false;
 

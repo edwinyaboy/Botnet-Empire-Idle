@@ -7,7 +7,7 @@ export function sell(tier, amount){
   if(amount === 0) return;
   
   if(amount > 50000000){
-    if(!confirm(`Sell ${amount.toLocaleString()} ${tier.toUpperCase()} bots?`)) return;
+    if(!confirm(`Sell ${amount.toLocaleString()} ${tier.toUpperCase()} hacked computers?`)) return;
   }
   
   if(game.bots[tier] >= amount){

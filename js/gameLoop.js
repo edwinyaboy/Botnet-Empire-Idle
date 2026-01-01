@@ -4,6 +4,8 @@ import { achievements } from './achievements.js';
 import { upgrades } from './upgrades.js';
 import { tools } from './tools.js';
 
+export const PRICE_ROLL_TIME = 1800000;
+
 export function update() {
   const now = Date.now();
   const delta = Math.min((now - game.lastTick) / 1000, 1);
@@ -43,8 +45,7 @@ export function update() {
     game.lastGraphSample = now;
   }
   
-  let priceRollTime = 1800000;
-  if(Date.now() - game.priceTime > priceRollTime) {
+  if(!game.priceTime || now - game.priceTime > PRICE_ROLL_TIME) {
     rollPrices();
   }
   
@@ -122,9 +123,11 @@ export function rollPrices(){
     t3:(Math.random()*0.22+0.08),
     mobile:(Math.random()*0.8+1.2)
   };
-  
-  if(oldPrices && game.upgrades.marketScanner){
+
+  if(oldPrices && Object.keys(oldPrices).length > 0 && game.upgrades.marketScanner){
     game.priceDirection = game.prices.t3 > oldPrices.t3 ? 1 : (game.prices.t3 < oldPrices.t3 ? -1 : 0);
+  } else {
+    game.priceDirection = 0;
   }
   
   game.priceTime = Date.now();
@@ -174,6 +177,7 @@ export function resetGame(){
   sessionStorage.clear();
 
   Object.assign(game, {
+    version: '1.1.3',
     bots: { t1:0, t2:0, t3:0, mobile:0 },
     money:0,
     prestige:0,
@@ -203,7 +207,8 @@ export function resetGame(){
     eventAcknowledged:false
   });
   
-  location.reload(true);
+  localStorage.setItem("botnet_empire_version", "1.1.3");
+  location.reload();
 }
 
 export function upgrade(skill){
