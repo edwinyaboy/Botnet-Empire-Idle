@@ -315,7 +315,7 @@ function renderUpgrades(){
       </div>
       <div class="tool-desc">${u.desc}`;
     
-    if(u.effect === "base_bots") html += ` - ${u.value} Tier 3 hacked computers per second`;
+    if(u.effect === "base_bots") html += ` - Gains an additional ${u.value} Tier 3 hacked computers per second`;
     if(u.effect === "sell_price") html += ` - +${(u.value*100).toFixed(0)}% sell price`;
     if(u.effect === "market_info") html += ` - Shows price trends (↑) or (↓) for Tier 3 hacked computers`;
     

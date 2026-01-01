@@ -47,7 +47,7 @@ enumScan:{ name:"Service Enumeration Scanner", desc:"Finds open services and exp
 autoClick:{ name:"Automated Interaction Engine", desc:"Simulates repeated actions to speed up system takeovers", cost:5000, type:"bots", base:500 },
 phishMini:{ name:"Phishing Campaign Test", desc:"Runs small social engineering attempts with optional manual boosts", cost:10000, type:"bots", base:800, clickable:true, clickBonus:2000, clickCooldown:180 },
 payloadForge:{ name:"Payload Obfuscation Tool", desc:"Modifies exploits to slip past basic detection systems", cost:12000, type:"bots", base:1100 },
-marketScanner:{ name:"Red Pill", desc:"Predicts short-term market trends for Tier 3 Basic hacked computers pricing", cost:15000, value:1 },
+marketScanner:{ name:"Red Pill", desc:"Shows the next price trend (↑) or (↓) for Tier 3 hacked computers", cost:15000, value:1 },
 credGrab:{ name:"Information Grabber", desc:"Pulls stored usernames and passwords from compromised machines", cost:20000, type:"bots", base:1500 },
 botSeed:{ name:"Botnet Seeding Framework", desc:"Groups new systems into a coordinated network", cost:30000, type:"bots", base:3000 },
 lateralMove:{ name:"Lateral Movement Module", desc:"Spreads deeper into internal networks after first access", cost:40000, type:"bots", base:4500 },
