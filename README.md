@@ -15,12 +15,11 @@ A browser-based hacker and botnet themed idle clicker game.
 
 ⚠️ **Still in development — expect bugs!** Please report issues or suggestions.
 
-⚠️ If "Spread Network" isn't working, you have to "Reset All Data" (Button on the bottom). This is due to new updates. You should be able to export and import your save data.
-
 ---
 
 ## Update List
 
+- [ ] Bug Fixes (Constantly)
 - [ ] More Random Event Types & Offline Events
 - [ ] Offline Progress
 - [ ] File Crypt Cycle
@@ -28,7 +27,9 @@ A browser-based hacker and botnet themed idle clicker game.
 - [ ] Crypto Market
 - [ ] Scraped Data Market
 - [ ] DDoS Minigame
-- [ ] Bug Fixes
+- [X] Bug Fixes
+- [X] Version Migration
+- [X] Player Friendly Terminology
 - [X] Slots Minigame
 - [X] Mo' Modular
 - [X] Mobile Compatibility (Should be good)
@@ -42,7 +43,6 @@ A browser-based hacker and botnet themed idle clicker game.
 - [X] Automation Mechanics
 - [X] Upgrades & Stats
 - [X] Basic Idle Clicker Gameplay
-- [X] Bug Fixes
 
 ---
 
