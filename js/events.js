@@ -41,9 +41,9 @@ export function triggerEvent(){
   
   if(!game.activeEvent && now >= game.nextEventTime){
     const events = [
-      {title:"SECURITY ALERT", text:"FBI raid detected on network infrastructure. Automatically hacked computers reduced by 30% for 2 minutes.", type:"raid", duration:120000, effect:"Bot generation -30%"},
-      {title:"NETWORK OUTAGE", text:"Major ISP experiencing service disruption. Cash per second reduced by 50% for 90 seconds.", type:"outage", duration:90000, effect:"Income generation -50%"},
-      {title:"EXPLOIT DISCOVERED", text:"Critical zero-day vulnerability identified. Automatically hacked computers increased by 100% for 2 minutes.", type:"boom", duration:120000, effect:"Bot generation +100%"}
+      {title:"SECURITY ALERT", text:"FBI raid detected on network infrastructure.", type:"raid", duration:120000, effect:"Automatically hacked computers reduced by 30% for 2 minutes."},
+      {title:"NETWORK OUTAGE", text:"Major ISP experiencing service disruption.", type:"outage", duration:90000, effect:"Cash per second reduced by 50% for 90 seconds."},
+      {title:"EXPLOIT DISCOVERED", text:"Critical zero-day vulnerability identified.", type:"boom", duration:120000, effect:"Automatically hacked computers increased by 100% for 2 minutes."}
     ];
     
     const event = events[Math.floor(Math.random() * events.length)];
