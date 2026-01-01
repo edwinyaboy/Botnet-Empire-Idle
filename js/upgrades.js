@@ -2,17 +2,16 @@ import { game, saveGame } from './state.js';
 import { tools } from './tools.js';
 
 export const upgrades = {
-buildPC:{ name:"Brand New Computer", desc:"Your first custom-built desktop for running operations", cost:500, effect:"base_bots", value:2 },
-antenna:{ name:"External WiFi Antenna", desc:"Improves signal reach when expanding your network", cost:2500, type:"bots", base:25 },
-proxygambit:{ name:"ProxyGambit", desc:"Routes traffic through distant relays to expand safely", cost:5000, type:"bots", base:150 },
-ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Handles more tasks at once without slowdowns", cost:10000, effect:"base_bots", value:5 },
-ssdUpgrade:{ name:"NVMe Storage Array", desc:"Faster storage speeds up payload execution", cost:20000, effect:"base_bots", value:10 },
-osHardening:{ name:"Custom Hardened OS", desc:"Streamlined system built for automation workloads", cost:60000, effect:"base_bots", value:25 },
-networkStack:{ name:"Optimized Network Stack", desc:"Improves data flow and long-term stability", cost:500000, effect:"base_bots", value:150 },
-serverRack:{ name:"Dedicated Server Rack", desc:"Enterprise hardware massively boosts operations", cost:1500000, effect:"base_bots", value:400 },
-ai:{ name:"Autonomous Spread Controller", desc:"Smart automation improves manual expansion efficiency", cost:5000000, type:"bots", base:12000 }
+  buildPC:{ name:"Brand New Computer", desc:"Your first custom-built desktop for running operations", cost:500, effect:"base_bots", value:2 },
+  antenna:{ name:"External WiFi Antenna", desc:"Improves signal reach when expanding your network - Additional 5% Hacked Computers gained per click", cost:2500, type:"bots", base:25 },
+  ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Handles more tasks at once without slowdowns", cost:5000, effect:"base_bots", value:800 },
+  ssdUpgrade:{ name:"NVMe Storage Array", desc:"Faster storage speeds up payload execution", cost:20000, effect:"base_bots", value:5500 },
+  proxygambit:{ name:"ProxyGambit", desc:"Routes traffic through distant relays to expand safely - Additional 10% Hacked Computers gained per click", cost:40000, type:"bots", base:150 },
+  osHardening:{ name:"Custom Hardened OS", desc:"Streamlined system built for automation workloads", cost:60000, effect:"base_bots", value:7500 },
+  networkStack:{ name:"Optimized Network Stack", desc:"Improves data flow and long-term stability", cost:500000, effect:"base_bots", value:80000 },
+  serverRack:{ name:"Dedicated Server Rack", desc:"Enterprise hardware massively boosts operations", cost:1500000, effect:"base_bots", value:150000 },
+  ai:{ name:"Autonomous Spread Controller", desc:"Smart automation improves manual expansion efficiency - Additional 25% Hacked Computers gained per click", cost:5000000, type:"bots", base:12000 }
 };
-
 
 let purchaseInProgress = false;
 
@@ -87,4 +86,5 @@ export function buyTool(id){
       purchaseInProgress = false;
     }, 100);
   }
+
 }

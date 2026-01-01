@@ -40,13 +40,11 @@ export function spread() {
   }
   
   let clickMult = 1;
-  
-  try {
     clickMult *= getAchievementBonus("click");
-  } catch (e) {
-    console.warn("Error getting achievement bonus:", e);
-  }
-  
+    if(game.upgrades.antenna) clickMult *= 1 + 0.05 * game.upgrades.antenna;
+    if(game.upgrades.proxygambit) clickMult *= 1 + 0.10 * game.upgrades.proxygambit;
+    if(game.upgrades.ai) clickMult *= 1 + 0.25 * game.upgrades.ai;
+
   const amount = Math.floor(10 * clickMult);
   
   const mobileUnlocked = (game.unlocks && game.unlocks.mobile === true);

@@ -16,7 +16,7 @@ export function showTutorial(){
           <h4>Getting Started</h4>
           <ul>
             <li><strong>Spread Virus Button:</strong> Click to gain 10+ hacked computers. Hold to generate hacked computers continuously.</li>
-            <li><strong>Hacked Computer Tiers:</strong> T3 (Basic, 72% chance), T2 (Standard, 22%), T1 (Premium, 6%). Higher tiers sell for more.</li>
+            <li><strong>Hacked Computer Quality:</strong> Poor (72% chance), Standard (22%), Premium (6%). Higher quality hacked computers sell for more.</li>
           </ul>
           
           <h4>Selling Hacked Computers</h4>
@@ -35,7 +35,7 @@ export function showTutorial(){
           
           <h4>Skill Upgrades</h4>
           <ul>
-            <li><strong>Hacked Computer Tier Distribution:</strong> +5% Better Tiers Per Level</li>
+            <li><strong>Hacked Computer Quality Distribution:</strong> +5% Better Quality Per Level</li>
             <li><strong>Market Efficiency:</strong> +10% Sell Prices Per Level.</li>
             <li><strong>Hacked Computers Generation Rate:</strong> +10% Hacked Computers Per Level.</li>
             <li><strong>Automation Efficiency:</strong> +5% Tool Effectiveness Per Level.</li>

@@ -225,9 +225,9 @@ function renderSellInterface() {
   }
 
   const tiers = [
-    { key:"t1", label:"TIER 1 PREMIUM", price:game.prices.t1, count:game.bots.t1 || 0 },
-    { key:"t2", label:"TIER 2 STANDARD", price:game.prices.t2, count:game.bots.t2 || 0 },
-    { key:"t3", label:"TIER 3 BASIC", price:game.prices.t3, count:game.bots.t3 || 0 }
+    { key:"t1", label:"PREMIUM", price:game.prices.t1, count:game.bots.t1 || 0 },
+    { key:"t2", label:"STANDARD", price:game.prices.t2, count:game.bots.t2 || 0 },
+    { key:"t3", label:"POOR", price:game.prices.t3, count:game.bots.t3 || 0 }
   ];
 
   if(game.unlocks.mobile) tiers.push({ key:"mobile", label:"Mobile", price:game.prices.mobile, count:game.bots.mobile || 0 });
@@ -315,9 +315,9 @@ function renderUpgrades(){
       </div>
       <div class="tool-desc">${u.desc}`;
     
-    if(u.effect === "base_bots") html += ` - Gains an additional ${u.value} Tier 3 hacked computers per second`;
+    if(u.effect === "base_bots") html += ` - Gains an additional ${u.value} Poor quality hacked computers per second`;
     if(u.effect === "sell_price") html += ` - +${(u.value*100).toFixed(0)}% sell price`;
-    if(u.effect === "market_info") html += ` - Shows price trends (↑) or (↓) for Tier 3 hacked computers`;
+    if(u.effect === "market_info") html += ` - Shows price trends (↑) or (↓) for Poor quality hacked computers`;
     
     html += `</div>`;
     
@@ -351,7 +351,7 @@ function renderMarketplace(){
       </div>
       <div class="tool-desc">${t.desc}`;
 
-    if(t.type === "bots") html += ` - Gains an additional ${t.base} Tier 3 hacked computers per second`;
+    if(t.type === "bots") html += ` - Gains an additional ${t.base} Poor quality hacked computers per second`;
     if(t.type === "money") html += ` - Earns $${t.base} per second`;
     if(t.clickable) html += ` - Clickable`;
     if(t.unlocks === "mobile") html += ` - Unlocks Mobile Infrastructure`;
@@ -373,7 +373,7 @@ function renderSkills(){
   if(!skillsUI) return;
 
   const skillDefs = [
-    {key:"tiers", label:"Hacked Computer Tier Distribution", desc:"+5% Better Tier Chance"},
+    {key:"tiers", label:"Hacked Computer Tier Distribution", desc:"+5% Better Quality Chance"},
     {key:"prices", label:"Market Efficiency", desc:"+10% Sell Prices"},
     {key:"generation", label:"Hacked Computers Generation Rate", desc:"+10% Automatically Hacked Computers"},
     {key:"automation", label:"Automation Efficiency", desc:"+5% Dark Web Tool Effectiveness"}
@@ -585,9 +585,9 @@ function drawPieChart(){
   }
 
   const data = [
-    {label:"T1", value:game.bots.t1 || 0, color:"#6e7681", fullLabel:"T1 Premium"},
-    {label:"T2", value:game.bots.t2 || 0, color:"#58a6ff", fullLabel:"T2 Standard"},
-    {label:"T3", value:game.bots.t3 || 0, color:"#f85149", fullLabel:"T3 Basic"}
+    {label:"T1", value:game.bots.t1 || 0, color:"#6e7681", fullLabel:"Premium Quality"},
+    {label:"T2", value:game.bots.t2 || 0, color:"#58a6ff", fullLabel:"Standard Quality"},
+    {label:"T3", value:game.bots.t3 || 0, color:"#f85149", fullLabel:"Poor Quality"}
   ];
   if(game.unlocks.mobile && game.bots.mobile > 0) {
     data.push({label:"Mobile", value:game.bots.mobile || 0, color:"#ffc107", fullLabel:"Mobile"});
