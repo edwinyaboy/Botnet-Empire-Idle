@@ -602,3 +602,7 @@ canvas {
 .slot-stat-value.free-spins {
   color: #f85149;
 }
+
+.crypto-mode-btn.active {
+  font-weight: 600;
+}

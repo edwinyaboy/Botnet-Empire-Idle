@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:;">
 <title>Botnet Empire Idle</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Botnet Empire Idle – build and manage an ever-growing botnet, upgrade tools, trade on the dark web marketplace, prestige for bonuses. Browser-based idle game.">
+<meta name="description" content="Botnet Empire Idle — build and manage an ever-growing botnet, upgrade tools, trade on the dark web marketplace, prestige for bonuses. Browser-based idle game.">
 <meta name="keywords" content="idle game, botnet idle, idle clicker, incremental game, hacking game, browser game">
 <meta name="author" content="Shrine">
 <meta name="robots" content="index, follow">
@@ -18,13 +19,13 @@
 <meta name="theme-color" content="#0d1117">
 <link rel="mask-icon" href="images/favicon.svg" color="#0d1117">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Botnet Empire Idle – Botnet Dashboard">
+<meta property="og:title" content="Botnet Empire Idle — Botnet Dashboard">
 <meta property="og:description" content="Build and manage a botnet, buy upgrades, and prestige for long-term bonuses in this browser idle game.">
 <meta property="og:image" content="https://raw.githubusercontent.com/edwinyaboy/Botnet-Empire-Idle/main/screenshot.png">
 <meta property="og:url" content="https://edwinyaboy.github.io/Botnet-Empire-Idle/">
 <meta property="og:site_name" content="Botnet Empire Idle">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Botnet Empire Idle – Botnet Dashboard">
+<meta name="twitter:title" content="Botnet Empire Idle — Botnet Dashboard">
 <meta name="twitter:description" content="Build and manage a botnet, buy upgrades, and prestige for long-term bonuses in this browser idle game.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/edwinyaboy/Botnet-Empire-Idle/main/screenshot.png">
 <meta name="twitter:site" content="@Shrine">
@@ -104,14 +105,13 @@
     </div>
   </div>
   <div class="grid">
-  <div class="panel" id="marketPanel">
-    <h3>Sell Hacked Computers</h3>
-    <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:12px;">
-      Next update: <span id="priceTimer">--:--</span>
+    <div class="panel" id="marketPanel">
+      <h3>Sell Hacked Computers</h3>
+      <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-bottom:12px;">
+        Next update: <span id="priceTimer">--:--</span>
+      </div>
+      <div id="sellInterface"></div>
     </div>
-    <div id="sellInterface"></div>
-  </div>
-  
     <div class="panel">
       <h3>Minigames</h3>
       <button class="primary" onclick="enterSlots()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; width: 100%; margin-bottom:12px;">

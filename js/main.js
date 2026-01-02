@@ -1,21 +1,42 @@
 import { game, saveGame } from './state.js';
 import { showTutorial, closeTutorial } from './tutorial.js';
-import { spread, startSpread, stopSpread, resetSpread, spreadHeld, spreadInterval, spreadClickInProgress, lastSpreadTime } from './bots.js';
+import { spread, startSpread, stopSpread, resetSpread } from './bots.js';
 import { sell, sellCustom } from './purchase.js';
 import { buyUpgrade, buyTool } from './upgrades.js';
 import { clickTool } from './tools.js';
 import { prestigeReset } from './prestige.js';
 import { showEvent, acknowledgeEvent, triggerEvent } from './events.js';
 import { render, setupEventListeners, initUICosts } from './ui.js';
-import { exportSave, importSave, resetGame, update as gameUpdate, rollPrices, upgrade } from './gameLoop.js';
+import { exportSave, importSave, resetGame, update as gameUpdate, rollPrices, upgrade, calculateBPS, calculateMPS } from './gameLoop.js';
 import { enterSlots } from './slots.js';
+import { initCryptoAfterGameLoad, getCryptoMiningInstance } from './crypto.js';
+import { initOfflineSystem, processOfflineProgress, updateLastOnlineTime } from './offline.js';
 
 export { game };
 
+const VERSION_KEY = "botnet_empire_version";
+const SAVE_KEY = "botnet_empire_v1";
+const MIGRATION_LOCK_KEY = "botnet_migration_in_progress";
+const MIGRATION_BACKUP_KEY = "botnet_migration_backup";
+const CURRENT_VERSION = '1.2.0';
+
+const eventHandlers = new Map();
+
+function sanitizeNumber(value, defaultValue = 0, min = -Number.MAX_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) {
+  if (typeof value !== 'number') return defaultValue;
+  if (isNaN(value) || !isFinite(value)) return defaultValue;
+  return Math.max(min, Math.min(max, value));
+}
+
 function migrateGameState(loadedGame) {
-  const currentVersion = '1.1.3';
+  try {
+    localStorage.setItem(MIGRATION_BACKUP_KEY, JSON.stringify(loadedGame));
+  } catch (e) {
+    console.warn("Failed to create migration backup:", e);
+  }
+  
   const defaultGame = {
-    version: currentVersion,
+    version: CURRENT_VERSION,
     bots: { t1:0, t2:0, t3:0, mobile:0 },
     money:0,
     prestige:0,
@@ -45,55 +66,70 @@ function migrateGameState(loadedGame) {
     eventAcknowledged:false
   };
 
-  const merged = JSON.parse(JSON.stringify(defaultGame));
+  const migrated = JSON.parse(JSON.stringify(defaultGame));
   
-  for (const key in loadedGame) {
-    if (key === 'bots' && loadedGame.bots) {
-      merged.bots = { ...merged.bots, ...loadedGame.bots };
-    } else if (key === 'skills' && loadedGame.skills) {
-      merged.skills = { ...merged.skills, ...loadedGame.skills };
-    } else if (key === 'prices' && loadedGame.prices) {
-      merged.prices = { ...merged.prices, ...loadedGame.prices };
-    } else if (key === 'unlocks' && loadedGame.unlocks) {
-      merged.unlocks = { ...merged.unlocks, ...loadedGame.unlocks };
-    } else if (key === 'tools' && loadedGame.tools) {
-      merged.tools = { ...loadedGame.tools };
-    } else if (key === 'upgrades' && loadedGame.upgrades) {
-      merged.upgrades = { ...loadedGame.upgrades };
-    } else if (key === 'achievements' && loadedGame.achievements) {
-      merged.achievements = { ...loadedGame.achievements };
-    } else if (key === 'clickCooldowns' && loadedGame.clickCooldowns) {
-      merged.clickCooldowns = { ...loadedGame.clickCooldowns };
-    } else if (key === 'moneyGraph' && Array.isArray(loadedGame.moneyGraph)) {
-      merged.moneyGraph = [...loadedGame.moneyGraph];
-    } else if (key in merged && loadedGame[key] !== undefined) {
-      merged[key] = loadedGame[key];
+  try {
+    for (const key in loadedGame) {
+      if (loadedGame[key] !== undefined && loadedGame[key] !== null) {
+        if (typeof loadedGame[key] === 'object' && !Array.isArray(loadedGame[key])) {
+          migrated[key] = { ...migrated[key], ...loadedGame[key] };
+        } else {
+          migrated[key] = loadedGame[key];
+        }
+      }
     }
+  } catch (e) {
+    console.error("Error during migration:", e);
   }
   
-  if (!merged.bots.t1 && merged.bots.t1 !== 0) merged.bots.t1 = 0;
-  if (!merged.bots.t2 && merged.bots.t2 !== 0) merged.bots.t2 = 0;
-  if (!merged.bots.t3 && merged.bots.t3 !== 0) merged.bots.t3 = 0;
-  if (!merged.bots.mobile && merged.bots.mobile !== 0) merged.bots.mobile = 0;
-  
-  if (!merged.skills.tiers && merged.skills.tiers !== 0) merged.skills.tiers = 0;
-  if (!merged.skills.prices && merged.skills.prices !== 0) merged.skills.prices = 0;
-  if (!merged.skills.generation && merged.skills.generation !== 0) merged.skills.generation = 0;
-  if (!merged.skills.automation && merged.skills.automation !== 0) merged.skills.automation = 0;
-  
-  if (typeof merged.money !== 'number' || isNaN(merged.money)) merged.money = 0;
-  if (typeof merged.prestige !== 'number' || isNaN(merged.prestige)) merged.prestige = 0;
-  if (typeof merged.totalEarned !== 'number' || isNaN(merged.totalEarned)) merged.totalEarned = 0;
-  if (typeof merged.totalClicks !== 'number' || isNaN(merged.totalClicks)) merged.totalClicks = 0;
-  if (typeof merged.totalBotsSold !== 'number' || isNaN(merged.totalBotsSold)) merged.totalBotsSold = 0;
-  
-  if (!merged.priceTime || typeof merged.priceTime !== 'number') {
-    merged.priceTime = Date.now();
+  if (!migrated.bots || typeof migrated.bots !== 'object') {
+    migrated.bots = { t1:0, t2:0, t3:0, mobile:0 };
+  }
+  if (!migrated.skills || typeof migrated.skills !== 'object') {
+    migrated.skills = { tiers:0, prices:0, generation:0, automation:0 };
+  }
+  if (!migrated.unlocks || typeof migrated.unlocks !== 'object') {
+    migrated.unlocks = { mobile:false };
+  }
+  if (!migrated.clickCooldowns || typeof migrated.clickCooldowns !== 'object') {
+    migrated.clickCooldowns = {};
+  }
+  if (!Array.isArray(migrated.moneyGraph)) {
+    migrated.moneyGraph = [];
   }
   
-  merged.version = currentVersion;
+  migrated.version = CURRENT_VERSION;
   
-  return merged;
+  return migrated;
+}
+
+function checkStorageHealth() {
+  try {
+    const testKey = 'storage_test_' + Date.now();
+    const testData = 'x'.repeat(1024 * 10);
+    localStorage.setItem(testKey, testData);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    console.warn("Storage may be full or corrupted:", e);
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('backup') || key.includes('migration'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      });
+    } catch (e) {
+      console.error("Failed to clean storage:", e);
+    }
+    return false;
+  }
 }
 
 function validateGameState() {
@@ -103,175 +139,273 @@ function validateGameState() {
     'totalBotsSold'
   ];
   
-  for (const prop of requiredProperties) {
-    if (game[prop] === undefined) {
-      switch(prop) {
-        case 'bots':
-          game.bots = { t1:0, t2:0, t3:0, mobile:0 };
-          break;
-        case 'skills':
-          game.skills = { tiers:0, prices:0, generation:0, automation:0 };
-          break;
-        case 'tools':
-          game.tools = {};
-          break;
-        case 'upgrades':
-          game.upgrades = {};
-          break;
-        case 'prices':
-          game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
-          break;
-        case 'achievements':
-          game.achievements = {};
-          break;
-        case 'unlocks':
-          game.unlocks = { mobile:false };
-          break;
-        case 'money':
-        case 'prestige':
-        case 'totalClicks':
-        case 'totalEarned':
-        case 'totalBotsSold':
-          game[prop] = 0;
-          break;
+  try {
+    for (const prop of requiredProperties) {
+      if (game[prop] === undefined) {
+        switch (prop) {
+          case 'bots':
+            game.bots = { t1:0, t2:0, t3:0, mobile:0 };
+            break;
+          case 'skills':
+            game.skills = { tiers:0, prices:0, generation:0, automation:0 };
+            break;
+          case 'tools':
+            game.tools = {};
+            break;
+          case 'upgrades':
+            game.upgrades = {};
+            break;
+          case 'prices':
+            game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
+            break;
+          case 'achievements':
+            game.achievements = {};
+            break;
+          case 'unlocks':
+            game.unlocks = { mobile:false };
+            break;
+          case 'money':
+          case 'prestige':
+          case 'totalClicks':
+          case 'totalEarned':
+          case 'totalBotsSold':
+            game[prop] = 0;
+            break;
+        }
       }
     }
-  }
-  
-  const numericProps = ['money', 'prestige', 'totalClicks', 'totalEarned', 'totalBotsSold'];
-  for (const prop of numericProps) {
-    if (typeof game[prop] !== 'number' || isNaN(game[prop])) {
-      game[prop] = 0;
+    
+    const numericProps = ['money', 'prestige', 'totalClicks', 'totalEarned', 'totalBotsSold'];
+    for (const prop of numericProps) {
+      game[prop] = sanitizeNumber(game[prop], 0, 0);
     }
-  }
-  
-  const botTiers = ['t1', 't2', 't3', 'mobile'];
-  for (const tier of botTiers) {
-    if (typeof game.bots[tier] !== 'number' || isNaN(game.bots[tier])) {
-      game.bots[tier] = 0;
+    
+    const botTiers = ['t1', 't2', 't3', 'mobile'];
+    for (const tier of botTiers) {
+      game.bots[tier] = sanitizeNumber(game.bots[tier], 0, 0);
     }
-  }
-  
-  const skillKeys = ['tiers', 'prices', 'generation', 'automation'];
-  for (const skill of skillKeys) {
-    if (typeof game.skills[skill] !== 'number' || isNaN(game.skills[skill])) {
-      game.skills[skill] = 0;
+    
+    const skillKeys = ['tiers', 'prices', 'generation', 'automation'];
+    for (const skill of skillKeys) {
+      game.skills[skill] = sanitizeNumber(game.skills[skill], 0, 0);
     }
-  }
-  
-  const priceTiers = ['t1', 't2', 't3', 'mobile'];
-  for (const tier of priceTiers) {
-    if (typeof game.prices[tier] !== 'number' || isNaN(game.prices[tier])) {
+    
+    const priceTiers = ['t1', 't2', 't3', 'mobile'];
+    for (const tier of priceTiers) {
       const defaults = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
-      game.prices[tier] = defaults[tier] || 1;
+      game.prices[tier] = sanitizeNumber(game.prices[tier], defaults[tier] || 1, 0.01, 100);
     }
+  } catch (e) {
+    console.error("Error validating game state:", e);
+  }
+}
+
+function cleanupEventListeners() {
+  eventHandlers.forEach((handler, key) => {
+    try {
+      const [target, event] = key.split(':');
+      if (target === 'window') {
+        window.removeEventListener(event, handler);
+      } else if (target === 'document') {
+        document.removeEventListener(event, handler);
+      } else {
+        const el = document.getElementById(target);
+        if (el) {
+          el.removeEventListener(event, handler);
+        }
+      }
+    } catch (e) {
+      console.error("Error cleaning up listener:", e);
+    }
+  });
+  eventHandlers.clear();
+}
+
+function addTrackedListener(target, event, handler, options) {
+  try {
+    const key = `${target}:${event}`;
+    const targetObj = target === 'window' ? window : target === 'document' ? document : document.getElementById(target);
+    
+    if (targetObj) {
+      targetObj.addEventListener(event, handler, options);
+      eventHandlers.set(key, handler);
+    }
+  } catch (e) {
+    console.error("Error adding listener:", e);
   }
 }
 
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem("botnet_empire_v1");
-  const VERSION_KEY = "botnet_empire_version";
-  const CURRENT_VERSION = "1.1.3";
-  
-  let migrationPerformed = false;
-  
-  if(saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      const loadedVersion = parsed.version || '1.0.0';
-      
-      if(loadedVersion !== CURRENT_VERSION) {
-        const confirmation = confirm(
-          `New update detected (${loadedVersion} → ${CURRENT_VERSION})! Your save data needs to be migrated.\n\n` +
-          "Click OK to migrate (recommended)\n" +
-          "Click Cancel to reset and start fresh\n\n" +
-          "Note: This is a one-time process for major updates."
-        );
-        
-        if(confirmation) {
-          const migratedGame = migrateGameState(parsed);
-          Object.assign(game, migratedGame);
-          localStorage.setItem("botnet_empire_v1", JSON.stringify(game));
-          localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-          alert("Save data migrated successfully!");
-          migrationPerformed = true;
-          saveGame();
-        }
-      } else {
-        Object.assign(game, parsed);
-      }
-    } catch(e) {
-      console.error("Error loading save:", e);
-      resetGame();
-      return;
+  try {
+    if (!checkStorageHealth()) {
+      console.warn("Storage issues detected, attempting recovery...");
     }
-  }
-  
-  if(!game.prices || game.prices.t1 === 1) {
-    rollPrices();
-  }
-  
-  if(!migrationPerformed && saved) {
-    resetSpread();
     
-    if (!game.priceTime) {
+    if (localStorage.getItem(MIGRATION_LOCK_KEY)) {
+      console.warn("Migration was interrupted, restoring from backup...");
+      const backup = localStorage.getItem(MIGRATION_BACKUP_KEY);
+      if (backup) {
+        try {
+          localStorage.setItem(SAVE_KEY, backup);
+          localStorage.removeItem(MIGRATION_LOCK_KEY);
+          localStorage.removeItem(MIGRATION_BACKUP_KEY);
+          setTimeout(() => location.reload(), 100);
+          return;
+        } catch (e) {
+          console.error("Failed to restore from backup:", e);
+        }
+      }
+    }
+    
+    const saved = localStorage.getItem(SAVE_KEY);
+    const savedVersion = localStorage.getItem(VERSION_KEY);
+    
+    let migrationPerformed = false;
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const loadedVersion = parsed.version || '1.0.0';
+        
+        localStorage.setItem(MIGRATION_LOCK_KEY, 'true');
+        
+        if (loadedVersion !== CURRENT_VERSION) {
+          const confirmation = confirm(
+            `New update detected (${loadedVersion} → ${CURRENT_VERSION})! Your save data needs to be migrated.\n\n` +
+            "Click OK to migrate (recommended)\n" +
+            "Click Cancel to reset and start fresh\n\n" +
+            "Note: A backup will be created automatically."
+          );
+          
+          if (confirmation) {
+            const migratedGame = migrateGameState(parsed);
+            Object.assign(game, migratedGame);
+            
+            localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+            localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+            
+            localStorage.removeItem(MIGRATION_LOCK_KEY);
+            localStorage.removeItem(MIGRATION_BACKUP_KEY);
+            
+            alert("Save data migrated successfully!");
+            migrationPerformed = true;
+            saveGame();
+            
+            setTimeout(() => location.reload(), 100);
+            return;
+          } else {
+            localStorage.removeItem(MIGRATION_LOCK_KEY);
+            localStorage.removeItem(MIGRATION_BACKUP_KEY);
+            resetGame();
+            return;
+          }
+        } else {
+          Object.assign(game, parsed);
+        }
+        
+        localStorage.removeItem(MIGRATION_LOCK_KEY);
+        
+      } catch (e) {
+        console.error("Error loading save:", e);
+        
+        const backup = localStorage.getItem(MIGRATION_BACKUP_KEY);
+        if (backup) {
+          try {
+            localStorage.setItem(SAVE_KEY, backup);
+            console.log("Restored corrupted save from backup");
+          } catch (restoreError) {
+            console.error("Failed to restore:", restoreError);
+          }
+        }
+        
+        localStorage.removeItem(MIGRATION_LOCK_KEY);
+        resetGame();
+        return;
+      }
+    }
+    
+    if (!game.prices || game.prices.t1 === 1) {
+      rollPrices();
+    }
+    
+    if (!migrationPerformed && saved) {
+      resetSpread();
+      
+      if (!game.priceTime) {
+        game.priceTime = Date.now();
+      }
+      
+      if (game.priceDirection === undefined) {
+        game.priceDirection = 0;
+      }
+      
+      if (game.eventAcknowledged === undefined) {
+        game.eventAcknowledged = false;
+      }
+      
+      if (game.tutorialComplete === undefined) {
+        game.tutorialComplete = false;
+      }
+      
+      saveGame();
+    }
+    
+    if (!game.prices || typeof game.prices !== 'object') {
+      game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
       game.priceTime = Date.now();
     }
+	
+	processOfflineProgress(
+      game, 
+      calculateBPS, 
+      calculateMPS,
+      () => getCryptoMiningInstance ? getCryptoMiningInstance() : null
+    );
     
-    if (game.priceDirection === undefined) {
-      game.priceDirection = 0;
+    validateGameState();
+	initCryptoAfterGameLoad();
+	initOfflineSystem();
+    
+    if (game.activeEvent && !game.eventAcknowledged) {
+      setTimeout(() => {
+        if (game.activeEvent && !game.eventAcknowledged) {
+          game.eventAcknowledged = true;
+          game.eventEndTime = Date.now() + (game.eventDuration || 90000);
+          saveGame();
+        }
+      }, 5000);
     }
     
-    if (game.eventAcknowledged === undefined) {
-      game.eventAcknowledged = false;
-    }
+    game.lastTick = Date.now();
+    if (!game.lastGraphSample) game.lastGraphSample = Date.now();
     
-    if(game.tutorialComplete === undefined) {
-      game.tutorialComplete = false;
-    }
-    
-    saveGame();
-  }
-  
-  if(!game.prices) {
-    game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
-    game.priceTime = Date.now();
-  }
-  
-  validateGameState();
-  
-  if (game.activeEvent && !game.eventAcknowledged) {
-    setTimeout(() => {
-      if (game.activeEvent && !game.eventAcknowledged) {
-        game.eventAcknowledged = true;
-        game.eventEndTime = Date.now() + (game.eventDuration || 90000);
-        saveGame();
-      }
-    }, 5000);
-  }
-  
-  game.lastTick = Date.now();
-  if(!game.lastGraphSample) game.lastGraphSample = Date.now();
-  
-  initUICosts();
-  render();
-  
-  setInterval(() => {
-    gameUpdate();
-    triggerEvent();
+    initUICosts();
     render();
-  }, 100);
-  
-  setupEventListeners();
-  
-  if(!game.tutorialComplete){
-    setTimeout(showTutorial, 500);
+    
+    setInterval(() => {
+      try {
+        gameUpdate();
+        triggerEvent();
+        render();
+      } catch (e) {
+        console.error("Error in game loop:", e);
+      }
+    }, 100);
+    
+    setupEventListeners();
+    
+    if (!game.tutorialComplete) {
+      setTimeout(showTutorial, 500);
+    }
+  } catch (e) {
+    console.error("Critical error in initialization:", e);
+    alert("Failed to initialize game. Please refresh the page.");
   }
 });
 
-window.addEventListener('beforeunload', saveGame);
-document.addEventListener('visibilitychange', () => {
-  if(document.hidden) saveGame();
+addTrackedListener('window', 'beforeunload', saveGame);
+addTrackedListener('document', 'visibilitychange', () => {
+  if (document.hidden) saveGame();
 });
 
 const spreadBtn = document.getElementById('spreadBtn');
@@ -282,30 +416,40 @@ if (spreadBtn) {
   spreadBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     startSpread();
-  }, {passive: false});
+  }, { passive: false });
   spreadBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     stopSpread();
-  }, {passive: false});
+  }, { passive: false });
 }
 
-if (document.getElementById('prestigeBtn')) {
-  document.getElementById('prestigeBtn').addEventListener('click', prestigeReset);
+const buttonMappings = [
+  { id: 'prestigeBtn', handler: prestigeReset },
+  { id: 'exportBtn', handler: exportSave },
+  { id: 'importBtn', handler: importSave },
+  { id: 'tutorialBtn', handler: showTutorial },
+  { id: 'resetBtn', handler: () => {
+    if (confirm('Permanently delete all data?')) resetGame();
+  }}
+];
+
+buttonMappings.forEach(({ id, handler }) => {
+  const btn = document.getElementById(id);
+  if (btn) {
+    btn.addEventListener('click', handler);
+  }
+});
+
+let cleanedUp = false;
+function cleanupOnce() {
+  if (!cleanedUp) {
+    cleanupEventListeners();
+    cleanedUp = true;
+  }
 }
-if (document.getElementById('exportBtn')) {
-  document.getElementById('exportBtn').addEventListener('click', exportSave);
-}
-if (document.getElementById('importBtn')) {
-  document.getElementById('importBtn').addEventListener('click', importSave);
-}
-if (document.getElementById('tutorialBtn')) {
-  document.getElementById('tutorialBtn').addEventListener('click', showTutorial);
-}
-if (document.getElementById('resetBtn')) {
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    if(confirm('Permanently delete all data?')) resetGame();
-  });
-}
+
+addTrackedListener('window', 'pagehide', cleanupOnce);
+addTrackedListener('window', 'beforeunload', cleanupOnce);
 
 window.game = game;
 window.render = render;
