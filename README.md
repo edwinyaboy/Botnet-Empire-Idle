@@ -11,28 +11,30 @@ A browser-based hacker and botnet themed idle clicker game.
 
 ---
 
-⚠️ Keep a local version to ensure your saved data is secure, as updates make break your current game save.
+⚠️ Keep a local version to ensure your saved data is secure.
 
 ⚠️ **Still in development — expect bugs!** Please report issues or suggestions.
 
 ---
 
 ## Update List
-
+<details>
+<summary>Open Update List</summary>
+  
 - [ ] Bug Fixes (Constantly)
-- [ ] More Random Event Types & Offline Events
-- [ ] Offline Progress
+- [ ] More Random Events
 - [ ] File Crypt Cycle
-- [ ] Crypto Mining (Low/High Risk)
 - [ ] Crypto Market
-- [ ] Scraped Data Market
-- [ ] DDoS Minigame
-- [X] Bug Fixes
-- [X] Version Migration (If your game is not working, try using CTRL+Shift+R or clearing your browsers cache)
+- [ ] Breach Datacenter Minigame
+- [ ] Power Reroute Minigame
+- [ ] Cooling System Override Minigame
+- [X] Offline Progress & Offline Events
+- [X] Crypto Mining (Low/High Risk, just cash for now)
+- [X] Version Migration
 - [X] Player Friendly Terminology
 - [X] Slots Minigame
 - [X] Mo' Modular
-- [X] Mobile Compatibility (Should be good)
+- [X] Mobile Compatibility
 - [X] Bot and Revenue Graphs
 - [X] Data Management
 - [X] Prestige System
@@ -43,6 +45,8 @@ A browser-based hacker and botnet themed idle clicker game.
 - [X] Automation Mechanics
 - [X] Upgrades & Stats
 - [X] Basic Idle Clicker Gameplay
+
+</details>
 
 ---
 
