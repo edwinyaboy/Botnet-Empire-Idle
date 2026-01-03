@@ -7,7 +7,7 @@ const MAX_SAFE_INTEGER = 9007199254740991;
 const MIN_SAFE_INTEGER = -9007199254740991;
 
 export let game = {
-  version: '1.2.0',
+  version: '1.2.1',
   bots: { t1:0, t2:0, t3:0, mobile:0 },
   money:0,
   prestige:0,
@@ -110,13 +110,20 @@ function sanitizeGameState(state) {
     }
 	
 	if (state.cryptoMiningState && typeof state.cryptoMiningState === 'object') {
-      cleanState.cryptoMiningState = {
-        active: Boolean(state.cryptoMiningState.active),
-        mode: state.cryptoMiningState.mode || 'low',
-        totalMined: sanitizeNumber(state.cryptoMiningState.totalMined, 0, 0),
-        lastUpdate: sanitizeNumber(state.cryptoMiningState.lastUpdate, Date.now())
-      };
-    }
+	  cleanState.cryptoMiningState = {
+		active: sanitizeNumber(state.cryptoMiningState.active, false, 0, 1) === 1,
+		mode: state.cryptoMiningState.mode === 'high' ? 'high' : 'low',
+		totalMined: sanitizeNumber(state.cryptoMiningState.totalMined, 0, 0, MAX_SAFE_INTEGER),
+		lastUpdate: sanitizeNumber(state.cryptoMiningState.lastUpdate, Date.now(), 0, Date.now() + 86400000)
+	};
+	  } else {
+	  cleanState.cryptoMiningState = {
+		active: false,
+		mode: 'low',
+		totalMined: 0,
+		lastUpdate: Date.now()
+	  };
+	}
 
     const now = Date.now();
     cleanState.priceTime = sanitizeNumber(state.priceTime, now, now - 86400000, now + 86400000);
@@ -126,7 +133,7 @@ function sanitizeGameState(state) {
     cleanState.eventEndTime = sanitizeNumber(state.eventEndTime, 0, 0, now + 86400000);
     cleanState.nextEventTime = sanitizeNumber(state.nextEventTime, now, now, now + 86400000);
 
-    const safeProps = ['version', 'tools', 'upgrades', 'achievements', 'unlocks', 'activeEvent', 'eventEffect', 'activeToolTab', 'tutorialComplete', 'eventAcknowledged', 'eventDuration'];
+    const safeProps = ['version', 'tools', 'upgrades', 'achievements', 'unlocks', 'activeEvent', 'eventEffect', 'activeToolTab', 'tutorialComplete', 'eventAcknowledged', 'eventDuration', 'cryptoMiningState'];
     safeProps.forEach(prop => {
       if (state[prop] !== undefined) {
         cleanState[prop] = state[prop];
@@ -163,7 +170,7 @@ async function performSave() {
 
   try {
     game.lastTick = Date.now();
-    game.version = '1.2.0';
+    game.version = '1.2.1';
     
     if (!game.bots || typeof game.bots !== 'object') {
       game.bots = { t1:0, t2:0, t3:0, mobile:0 };
@@ -236,7 +243,7 @@ async function performSave() {
     
     try {
       const emergency = {
-        version: '1.2.0',
+        version: '1.2.1',
         bots: { t1:0, t2:0, t3:0, mobile:0 },
         money: game.money || 0,
         prestige: game.prestige || 0

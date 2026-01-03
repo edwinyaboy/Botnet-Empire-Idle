@@ -102,8 +102,6 @@ export function update() {
   }
 }
 
-
-
 export function createBackup() {
   const now = Date.now();
   if (now - lastBackupTime > BACKUP_INTERVAL) {
@@ -379,7 +377,7 @@ export function resetGame() {
     });
 
     Object.assign(game, {
-      version: '1.2.0',
+      version: '1.2.1',
       bots: { t1:0, t2:0, t3:0, mobile:0 },
       money:0,
       prestige:0,
@@ -415,7 +413,7 @@ export function resetGame() {
       }
     });
     
-    localStorage.setItem("botnet_empire_version", "1.2.0");
+    localStorage.setItem("botnet_empire_version", "1.2.1");
     
     if (typeof window.saveGame === 'function') {
       window.saveGame();
@@ -453,6 +451,19 @@ export function resetGame() {
         }
       }
     }
+	
+	if (typeof window.getCryptoMiningInstance === 'function') {
+	  const cryptoInstance = window.getCryptoMiningInstance();
+      if (cryptoInstance) {
+        cryptoInstance.stopMining();
+        cryptoInstance.state = {
+            active: false,
+            mode: 'low',
+            lastUpdate: Date.now(),
+            totalMined: 0
+        };
+	  }
+	}
     
     setTimeout(() => {
       location.reload();

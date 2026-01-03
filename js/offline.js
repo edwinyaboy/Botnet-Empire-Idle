@@ -17,6 +17,7 @@ class OfflineSystem {
         this.offlineEvent = null;
         this.elements = {};
         this.hasShownPopup = false;
+        this.popupActive = false;
         this.offlineEvents = [
             {
                 type: 'bot_gain',
@@ -27,7 +28,7 @@ class OfflineSystem {
                     const gain = Math.floor(totalBots * 0.05 * hours);
                     return { bots: gain, cash: 0 };
                 },
-                color: '#2ea043'
+                color: '#0366d6'
             },
             {
                 type: 'bot_loss',
@@ -65,68 +66,84 @@ class OfflineSystem {
         this.loadState();
     }
     
-    createPopup() {
+    isPopupActive() {
+        return this.popupActive;
+    }
+    
+        createPopup() {
         try {
             const existing = document.getElementById('offlinePopup');
             if (existing) existing.remove();
             
             this.elements.popup = document.createElement('div');
             this.elements.popup.id = 'offlinePopup';
-            this.elements.popup.className = 'modal';
+            this.elements.popup.className = 'modal-overlay';
             this.elements.popup.style.cssText = `
-                display: block;
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                z-index: 1000;
+                background: rgba(0, 0, 0, 0.85);
+                z-index: 10001;
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                pointer-events: all;
             `;
             
             const modalContent = document.createElement('div');
+            modalContent.className = 'modal';
+            modalContent.onclick = (e) => e.stopPropagation();
             modalContent.style.cssText = `
                 background: #0d1117;
                 border: 2px solid #30363d;
-                border-radius: 12px;
-                padding: 24px;
+                border-radius: 8px;
+                padding: 20px;
+                min-width: 300px;
                 max-width: 500px;
                 width: 90%;
-                max-height: 90vh;
-                overflow-y: auto;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             `;
             
-            const header = document.createElement('h2');
-            header.textContent = '📊 Offline Progress';
-            header.style.cssText = 'margin:0 0 16px 0; color:#58a6ff; font-size:20px; font-weight:600; text-align:center;';
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'modal-title';
+            titleDiv.textContent = '📊 Offline Progress';
+            titleDiv.style.cssText = 'margin:0 0 16px 0; color:#58a6ff; font-size:18px; font-weight:600; text-align:center;';
             
-            const summary = document.createElement('div');
-            summary.id = 'offlineSummary';
-            summary.style.cssText = 'font-size:14px; color:#c9d1d9; margin-bottom:16px; line-height:1.5;';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'modal-content';
+            contentDiv.style.cssText = 'font-size:14px; color:#c9d1d9; margin-bottom:16px; line-height:1.5;';
             
-            const offlineTime = document.createElement('div');
-            offlineTime.id = 'offlineTime';
-            offlineTime.style.cssText = 'font-size:16px; font-weight:600; color:#8b949e; margin:12px 0; text-align:center;';
+            this.elements.summary = document.createElement('div');
+            this.elements.summary.id = 'offlineSummary';
+            this.elements.summary.style.cssText = 'margin-bottom:12px;';
             
-            const gains = document.createElement('div');
-            gains.id = 'offlineGains';
-            gains.style.cssText = 'font-size:14px; color:#c9d1d9; margin:16px 0; background:#161b22; padding:12px; border-radius:6px;';
+            this.elements.offlineTime = document.createElement('div');
+            this.elements.offlineTime.id = 'offlineTime';
+            this.elements.offlineTime.style.cssText = 'font-size:16px; font-weight:600; color:#8b949e; margin:12px 0; text-align:center; background:#161b22; padding:8px; border-radius:6px; border:1px solid #30363d;';
             
-            const eventPanel = document.createElement('div');
-            eventPanel.id = 'offlineEventPanel';
-            eventPanel.style.cssText = 'display:none; margin-top:16px; padding:12px; border-radius:6px; border:2px solid;';
+            this.elements.gains = document.createElement('div');
+            this.elements.gains.id = 'offlineGains';
+            this.elements.gains.style.cssText = 'font-size:14px; color:#c9d1d9; margin:16px 0; background:#161b22; padding:12px; border-radius:6px; border:1px solid #30363d;';
             
-            const closeButton = document.createElement('button');
-            closeButton.textContent = 'OK';
-            closeButton.style.cssText = `
+            this.elements.eventPanel = document.createElement('div');
+            this.elements.eventPanel.id = 'offlineEventPanel';
+            this.elements.eventPanel.style.cssText = 'display:none; margin-top:16px; padding:12px; border-radius:6px; border:2px solid;';
+            
+            contentDiv.appendChild(this.elements.summary);
+            contentDiv.appendChild(this.elements.offlineTime);
+            contentDiv.appendChild(this.elements.gains);
+            contentDiv.appendChild(this.elements.eventPanel);
+            
+            const button = document.createElement('button');
+            button.className = 'primary';
+            button.textContent = 'OK';
+            button.style.cssText = `
                 display: block;
                 margin: 20px auto 0 auto;
                 padding: 10px 30px;
-                background: #238636;
+                background: #0366d6;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -134,27 +151,22 @@ class OfflineSystem {
                 font-weight: 600;
                 cursor: pointer;
             `;
-            closeButton.onclick = () => this.hidePopup();
-            closeButton.onmouseover = () => closeButton.style.background = '#2ea043';
-            closeButton.onmouseout = () => closeButton.style.background = '#238636';
+            button.onclick = () => this.hidePopup();
+            button.onmouseover = () => button.style.background = '#0366d6';
+            button.onmouseout = () => button.style.background = '#0366d6';
             
-            modalContent.appendChild(header);
-            modalContent.appendChild(summary);
-            modalContent.appendChild(offlineTime);
-            modalContent.appendChild(gains);
-            modalContent.appendChild(eventPanel);
-            modalContent.appendChild(closeButton);
+            modalContent.appendChild(titleDiv);
+            modalContent.appendChild(contentDiv);
+            modalContent.appendChild(button);
             
             this.elements.popup.appendChild(modalContent);
             document.body.appendChild(this.elements.popup);
             
-            this.elements.summary = summary;
-            this.elements.offlineTime = offlineTime;
-            this.elements.gains = gains;
-            this.elements.eventPanel = eventPanel;
+            this.popupActive = true;
             
         } catch (e) {
             console.error("Error creating offline popup:", e);
+            this.popupActive = false;
         }
     }
     
@@ -174,7 +186,7 @@ class OfflineSystem {
             
             let gainsHTML = '';
             if (botGains > 0) {
-                gainsHTML += `<div style="color:#2ea043; margin:4px 0;">🤖 +${botGains.toFixed(0)} T3 bots</div>`;
+                gainsHTML += `<div style="color:#0366d6; margin:4px 0;">🤖 +${botGains.toFixed(0)} T3 bots</div>`;
             }
             if (cashGains > 0) {
                 gainsHTML += `<div style="color:#58a6ff; margin:4px 0;">💰 +$${cashGains.toFixed(2)}</div>`;
@@ -214,8 +226,10 @@ class OfflineSystem {
                 this.elements.popup = null;
             }
             this.hasShownPopup = true;
+            this.popupActive = false;
         } catch (e) {
             console.error("Error hiding offline popup:", e);
+            this.popupActive = false;
         }
     }
     
@@ -225,7 +239,7 @@ class OfflineSystem {
             const timeDiff = now - this.lastOnlineTime;
             
             if (timeDiff < MIN_OFFLINE_FOR_PROGRESS) {
-                return { hours: 0, eligibleHours: 0 };
+                return { hours: 0, eligibleHours: 0, wasOffline: false };
             }
             
             const offlineSeconds = timeDiff / 1000;
@@ -239,7 +253,7 @@ class OfflineSystem {
             return {
                 hours: effectiveHours,
                 eligibleHours: eligibleHours,
-                wasOffline: timeDiff > MIN_OFFLINE_FOR_PROGRESS
+                wasOffline: true
             };
             
         } catch (e) {
@@ -263,22 +277,25 @@ class OfflineSystem {
             let cryptoMultiplier = 1;
             if (getCryptoMiningInstance) {
                 const cryptoInstance = getCryptoMiningInstance();
-                if (cryptoInstance) {
-                    cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier ? cryptoInstance.getBotGenerationMultiplier() : 1;
+                if (cryptoInstance && cryptoInstance.getBotGenerationMultiplier) {
+                    cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier();
                 }
             }
 
             const botGains = bps * offlineInfo.hours * 3600 * cryptoMultiplier;
-
             const cashGains = mps * offlineInfo.hours * 3600;
 
             let cryptoGains = 0;
-            const cryptoInstance = getCryptoMiningInstance ? getCryptoMiningInstance() : null;
-            if (cryptoInstance && cryptoInstance.state && cryptoInstance.state.active) {
-                const totalBots = (game.bots?.t1 || 0) + (game.bots?.t2 || 0) + (game.bots?.t3 || 0) + (game.bots?.mobile || 0);
-                const cryptoRate = cryptoInstance.currentRate ? cryptoInstance.currentRate[cryptoInstance.state.mode] || 0 : 0;
-                cryptoGains = totalBots * cryptoRate * offlineInfo.hours * 3600;
-            }
+              const cryptoInstance = getCryptoMiningInstance ? getCryptoMiningInstance() : null;
+			    if (cryptoInstance && cryptoInstance.state && cryptoInstance.state.active) {
+		  	  const totalBots = (game.bots?.t1 || 0) + (game.bots?.t2 || 0) + (game.bots?.t3 || 0) + (game.bots?.mobile || 0);
+		 	    if (totalBots > 0) {
+			  const cryptoRate = cryptoInstance.currentRate ? cryptoInstance.currentRate[cryptoInstance.state.mode] || 0 : 0;
+			    cryptoGains = totalBots * cryptoRate * offlineInfo.hours * 3600;
+			  } else {
+			  cryptoGains = 0;
+			  }
+			}
 
             if (botGains > 0) {
                 game.bots.t3 = sanitizeNumber(game.bots.t3 + botGains, 0, 0);
@@ -416,4 +433,8 @@ function updateLastOnlineTime() {
     }
 }
 
-export { OfflineSystem, initOfflineSystem, getOfflineSystemInstance, processOfflineProgress, updateLastOnlineTime };
+function isOfflinePopupActive() {
+    return offlineSystemInstance ? offlineSystemInstance.isPopupActive() : false;
+}
+
+export { OfflineSystem, initOfflineSystem, getOfflineSystemInstance, processOfflineProgress, updateLastOnlineTime, isOfflinePopupActive };

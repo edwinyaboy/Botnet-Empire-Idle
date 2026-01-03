@@ -549,7 +549,7 @@ function renderUpgrades() {
       
       html += `<div class="tool-card">`;
       html += `<div class="tool-header">`;
-      html += `<div class="tool-name">${u.name}</div>`;
+      html += `<div class="tool-name">${sanitizeString(u.name)}</div>`;
       if (owned) {
         html += `<div class="tool-status active">PURCHASED</div>`;
       }
@@ -604,7 +604,7 @@ function renderMarketplace() {
 
       html += `<div class="tool-card">`;
       html += `<div class="tool-header">`;
-      html += `<div class="tool-name">${t.name}</div>`;
+      html += `<div class="tool-name">${sanitizeString(t.name)}</div>`;
       if (owned) {
         html += `<div class="tool-status active">PURCHASED</div>`;
       }

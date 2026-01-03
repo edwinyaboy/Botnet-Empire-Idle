@@ -45,7 +45,7 @@ export function showEvent(event) {
     
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.style.cssText = 'pointer-events: all; display: flex;';
+    overlay.style.cssText = 'pointer-events: all; display: flex; z-index: 10000;';
 
     const modalContent = document.createElement('div');
     modalContent.className = 'modal';
@@ -107,6 +107,10 @@ export function acknowledgeEvent() {
 
 export function triggerEvent() {
   try {
+    if (typeof window.isOfflinePopupActive === 'function' && window.isOfflinePopupActive()) {
+      return;
+    }
+
     const now = Date.now();
     
     if (game.activeEvent && game.eventAcknowledged) {

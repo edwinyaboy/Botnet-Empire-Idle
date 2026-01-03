@@ -1,5 +1,6 @@
 import { game } from './state.js';
 import { achievements } from './achievements.js';
+import { upgrades } from './upgrades.js';
 
 export let spreadHeld = false;
 export let spreadInterval = null;

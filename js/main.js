@@ -10,7 +10,7 @@ import { render, setupEventListeners, initUICosts } from './ui.js';
 import { exportSave, importSave, resetGame, update as gameUpdate, rollPrices, upgrade, calculateBPS, calculateMPS } from './gameLoop.js';
 import { enterSlots } from './slots.js';
 import { initCryptoAfterGameLoad, getCryptoMiningInstance } from './crypto.js';
-import { initOfflineSystem, processOfflineProgress, updateLastOnlineTime } from './offline.js';
+import { initOfflineSystem, processOfflineProgress, updateLastOnlineTime, isOfflinePopupActive } from './offline.js';
 
 export { game };
 
@@ -18,7 +18,7 @@ const VERSION_KEY = "botnet_empire_version";
 const SAVE_KEY = "botnet_empire_v1";
 const MIGRATION_LOCK_KEY = "botnet_migration_in_progress";
 const MIGRATION_BACKUP_KEY = "botnet_migration_backup";
-const CURRENT_VERSION = '1.2.0';
+const CURRENT_VERSION = '1.2.1';
 
 const eventHandlers = new Map();
 
@@ -354,17 +354,17 @@ window.addEventListener('load', () => {
       game.prices = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
       game.priceTime = Date.now();
     }
-	
-	processOfflineProgress(
+    
+    validateGameState();
+    initOfflineSystem();
+    initCryptoAfterGameLoad();
+    
+    processOfflineProgress(
       game, 
       calculateBPS, 
       calculateMPS,
       () => getCryptoMiningInstance ? getCryptoMiningInstance() : null
     );
-    
-    validateGameState();
-	initCryptoAfterGameLoad();
-	initOfflineSystem();
     
     if (game.activeEvent && !game.eventAcknowledged) {
       setTimeout(() => {
@@ -403,9 +403,16 @@ window.addEventListener('load', () => {
   }
 });
 
-addTrackedListener('window', 'beforeunload', saveGame);
+addTrackedListener('window', 'beforeunload', () => {
+  saveGame();
+  updateLastOnlineTime();
+});
+
 addTrackedListener('document', 'visibilitychange', () => {
-  if (document.hidden) saveGame();
+  if (document.hidden) {
+    saveGame();
+    updateLastOnlineTime();
+  }
 });
 
 const spreadBtn = document.getElementById('spreadBtn');
@@ -469,3 +476,4 @@ window.exportSave = exportSave;
 window.importSave = importSave;
 window.resetGame = resetGame;
 window.enterSlots = enterSlots;
+window.isOfflinePopupActive = isOfflinePopupActive;

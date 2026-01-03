@@ -11,6 +11,7 @@ class CryptoMining {
         this.isActive = false;
         this.miningActive = false;
         this.updateInterval = null;
+        this.keyHandlerBound = false;
         
         this.state = {
             active: false,
@@ -36,6 +37,7 @@ class CryptoMining {
         };
         
         this.currentRate = { low: 0.0001, high: 0.0005 };
+        this.handleKeyDown = this.handleKeyDown.bind(this);
         this.createUI();
     }
     
@@ -43,7 +45,7 @@ class CryptoMining {
         this.loadState();
         this.updateRates();
         this.updateUI();
-		this.show();
+        this.show();
     }
     
     createUI() {
@@ -199,6 +201,16 @@ class CryptoMining {
         card.appendChild(labelDiv);
         card.appendChild(valueDiv);
         return card;
+    }
+    
+    handleKeyDown(e) {
+        if (!this.isActive) return;
+        
+        switch (e.code) {
+            case 'Escape':
+                this.exit();
+                break;
+        }
     }
     
     bindEvents() {
@@ -459,6 +471,12 @@ class CryptoMining {
         try {
             this.isActive = true;
             this.elements.container.style.display = 'block';
+            
+            if (!this.keyHandlerBound) {
+                document.addEventListener('keydown', this.handleKeyDown);
+                this.keyHandlerBound = true;
+            }
+            
             this.updateUI();
         } catch (e) {
             console.error("Error showing crypto panel:", e);
@@ -469,9 +487,18 @@ class CryptoMining {
         try {
             this.isActive = false;
             this.elements.container.style.display = 'none';
+            
+            if (this.keyHandlerBound) {
+                document.removeEventListener('keydown', this.handleKeyDown);
+                this.keyHandlerBound = false;
+            }
         } catch (e) {
             console.error("Error hiding crypto panel:", e);
         }
+    }
+    
+    exit() {
+        this.hide();
     }
     
     saveState() {

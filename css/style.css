@@ -148,8 +148,8 @@ button:disabled {
   cursor:not-allowed;
 }
 button.active {
-  background:#238636;
-  border-color:#2ea043;
+  background:#0366d6;
+  border-color:#0366d6;
   color:#fff;
 }
 button.danger {
@@ -199,7 +199,7 @@ button.small {
   white-space:nowrap;
 }
 .tool-status.active {
-  background:#238636;
+  background:#2ea043;
   color:#fff;
 }
 .tool-desc {
@@ -605,4 +605,30 @@ canvas {
 
 .crypto-mode-btn.active {
   font-weight: 600;
+}
+
+.crypto-mode-btn.active {
+    background: #1f6feb !important;
+    border-color: #58a6ff !important;
+    color: #fff !important;
+}
+
+button.primary {
+    background: #0366d6;
+    border-color: #0366d6;
+    color: white;
+}
+
+button.danger {
+    background: #da3633;
+    border-color: #f85149;
+    color: white;
+}
+
+button.primary:hover {
+    background: #0366d6;
+}
+
+button.danger:hover {
+    background: #f85149;
 }

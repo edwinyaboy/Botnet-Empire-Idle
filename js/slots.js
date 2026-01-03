@@ -14,7 +14,7 @@ class HackerSlots {
         this.isSpinning = false;
         this.autoSpinCount = 0;
         this.autoSpinInterval = null;
-		this.boundKeyHandler = this.handleKeyDown.bind(this);
+        this.keyHandlerBound = false;
         
         this.state = {
             bet: MIN_BET,
@@ -37,40 +37,33 @@ class HackerSlots {
         this.reels = Array(5).fill().map(() => Array(3).fill(null));
         this.elements = {};
         
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        
         this.createUI();
-        this.bindEvents();
         this.loadState();
     }
-	
-	handleKeyDown(e) {
-  if (!this.isActive) return;
-  
-  switch (e.code) {
-    case 'Escape':
-      this.exit();
-      break;
-    case 'Space':
-      if (!this.isSpinning) this.spin();
-      e.preventDefault();
-      break;
-    case 'ArrowUp':
-      this.updateBet(10);
-      e.preventDefault();
-      break;
-    case 'ArrowDown':
-      this.updateBet(-10);
-      e.preventDefault();
-      break;
-  }
-}
-
-	bindEvents() {
-	  try {
-			document.addEventListener('keydown', this.boundKeyHandler);
-			} catch (e) {
-			console.error("Error binding events:", e);
-		}
-	}
+    
+    handleKeyDown(e) {
+        if (!this.isActive) return;
+        
+        switch (e.code) {
+            case 'Escape':
+                this.exit();
+                break;
+            case 'Space':
+                if (!this.isSpinning) this.spin();
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+                this.updateBet(10);
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                this.updateBet(-10);
+                e.preventDefault();
+                break;
+        }
+    }
     
     generatePaylines() {
         return [
@@ -115,6 +108,12 @@ class HackerSlots {
                 overflow-x: hidden;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             `;
+            
+            this.elements.container.addEventListener('touchstart', (e) => {
+              if (e.target === this.elements.container) {
+                  this.exit();
+              }
+            }, { passive: true });
             
             this.elements.closeBtn = document.createElement('button');
             this.elements.closeBtn.textContent = 'X';
@@ -296,9 +295,9 @@ class HackerSlots {
             infoContent.style.cssText = 'display: grid; gap: 8px;';
             
             const symbolInfos = [
-                { emoji:'🖥️', text:'3 = 2x | 4 = 3x | 5 = 5x', color:'#6e7681' },
-                { emoji:'🤖', text:'3 = 3x | 4 = 5x | 5 = 10x', color:'#58a6ff' },
-                { emoji:'🛜', text:'3 = 5x | 4 = 10x | 5 = 15x', color:'#a371f7' },
+                { emoji:'🖥️', text:'3 = 2x<br />4 = 3x<br />5 = 5x', color:'#6e7681' },
+                { emoji:'🤖', text:'3 = 3x<br />4 = 5x<br />5 = 10x', color:'#58a6ff' },
+                { emoji:'🛜', text:'3 = 5x<br />4 = 10x<br />5 = 15x', color:'#a371f7' },
                 { emoji:'💽', text:'3+ = 10x', color:'#ffc107' },
                 { emoji:'0️⃣', text:'5 = 3–10 Free Spins', color:'#f85149' }
             ];
@@ -322,7 +321,7 @@ class HackerSlots {
                 emoji.style.fontSize = '20px';
                 
                 const text = document.createElement('span');
-                text.textContent = info.text;
+                text.innerHTML = info.text;
                 
                 div.appendChild(emoji);
                 div.appendChild(text);
@@ -439,34 +438,6 @@ class HackerSlots {
         return btn;
     }
     
-    bindEvents() {
-        try {
-            document.addEventListener('keydown', (e) => {
-                if (!this.isActive) return;
-                
-                switch (e.code) {
-                    case 'Escape':
-                        this.exit();
-                        break;
-                    case 'Space':
-                        if (!this.isSpinning) this.spin();
-                        e.preventDefault();
-                        break;
-                    case 'ArrowUp':
-                        this.updateBet(10);
-                        e.preventDefault();
-                        break;
-                    case 'ArrowDown':
-                        this.updateBet(-10);
-                        e.preventDefault();
-                        break;
-                }
-            });
-        } catch (e) {
-            console.error("Error binding events:", e);
-        }
-    }
-    
     enter() {
         try {
             if (this.isActive) return;
@@ -474,6 +445,11 @@ class HackerSlots {
             this.isActive = true;
             window.slotsActive = true;
             this.elements.container.style.display = 'block';
+            
+            if (!this.keyHandlerBound) {
+                document.addEventListener('keydown', this.handleKeyDown);
+                this.keyHandlerBound = true;
+            }
             
             this.updateUI();
             this.updateStats();
@@ -483,27 +459,28 @@ class HackerSlots {
     }
     
     exit() {
-	  try {
-		if (!this.isActive) return;
-		
-		this.isActive = false;
-		window.slotsActive = false;
-		this.elements.container.style.display = 'none';
-		this.stopAutoSpin();
-    
-		if (this.boundKeyHandler) {
-		  document.removeEventListener('keydown', this.boundKeyHandler);
-		}
-    
-      this.saveState();
-    
-	  if (typeof window.render === 'function') {
-		  window.render();
-		}
-	  } catch (e) {
-		console.error("Error exiting slots:", e);
-	  }
-	}
+        try {
+            if (!this.isActive) return;
+            
+            this.isActive = false;
+            window.slotsActive = false;
+            this.elements.container.style.display = 'none';
+            this.stopAutoSpin();
+            
+            if (this.keyHandlerBound) {
+                document.removeEventListener('keydown', this.handleKeyDown);
+                this.keyHandlerBound = false;
+            }
+            
+            this.saveState();
+            
+            if (typeof window.render === 'function') {
+                window.render();
+            }
+        } catch (e) {
+            console.error("Error exiting slots:", e);
+        }
+    }
     
     generateReels() {
         try {
@@ -612,10 +589,10 @@ class HackerSlots {
             };
             
             this.elements.stats.innerHTML = '';
-            this.elements.stats.appendChild(createStat('Bots', Math.floor(totalBots).toLocaleString()));
-            this.elements.stats.appendChild(createStat('Credits', `$${Math.floor(window.game?.money || 0).toLocaleString()}`));
-            this.elements.stats.appendChild(createStat('Streak', this.state.winStreak));
-            this.elements.stats.appendChild(createStat('Won', `$${this.state.totalWon}`));
+            this.elements.stats.appendChild(createStat('Hacked Computers', Math.floor(totalBots).toLocaleString()));
+            this.elements.stats.appendChild(createStat('Total Cash', `$${Math.floor(window.game?.money || 0).toLocaleString()}`));
+            this.elements.stats.appendChild(createStat('Win Streak', this.state.winStreak));
+            this.elements.stats.appendChild(createStat('Total Won', `$${this.state.totalWon}`));
             
             const freeSpinDiv = document.createElement('div');
             freeSpinDiv.style.cssText = 'background:#0d1117;padding:8px 12px;border-radius:4px;border:1px solid #30363d;color:#8b949e;font-size:12px;';
