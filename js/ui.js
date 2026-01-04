@@ -91,21 +91,15 @@ function batchUpdateUI() {
     const s = remaining % 60;
     const eventTimer = getElement("eventTimer");
     if (eventTimer) {
-      const newContent = `${game.activeEvent.toUpperCase()} ACTIVE\n${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining`;
-      if (eventTimer.textContent !== newContent) {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'event-timer-label';
-        labelDiv.textContent = `${game.activeEvent.toUpperCase()} ACTIVE`;
-        
-        const textDiv = document.createElement('div');
-        textDiv.textContent = `${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining`;
-        
-        eventTimer.innerHTML = '';
-        eventTimer.appendChild(labelDiv);
-        eventTimer.appendChild(textDiv);
-        eventTimer.style.display = "block";
-      }
-    }
+	const labelText = `${game.activeEvent.toUpperCase()} EVENT ACTIVE\n`;
+	const detailText = `${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining`;
+	const newContent = labelText + ' ' + detailText;
+  
+	if (eventTimer.textContent !== newContent) {
+		eventTimer.textContent = newContent;
+		eventTimer.style.display = "block";
+		}
+	}
   } else {
     const eventTimer = getElement("eventTimer");
     if (eventTimer && eventTimer.style.display !== "none") {

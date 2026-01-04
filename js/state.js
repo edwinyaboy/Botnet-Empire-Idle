@@ -7,7 +7,7 @@ const MAX_SAFE_INTEGER = 9007199254740991;
 const MIN_SAFE_INTEGER = -9007199254740991;
 
 export let game = {
-  version: '1.2.1',
+  version: '1.2.3',
   bots: { t1:0, t2:0, t3:0, mobile:0 },
   money:0,
   prestige:0,
@@ -35,7 +35,8 @@ export let game = {
   tutorialComplete:false,
   priceDirection:0,
   eventAcknowledged:false,
-  cryptoMiningState: null
+  cryptoMiningState: null,
+  offlineProcessed: false
 };
 
 function sanitizeNumber(value, defaultValue = 0, min = MIN_SAFE_INTEGER, max = MAX_SAFE_INTEGER) {
@@ -111,7 +112,7 @@ function sanitizeGameState(state) {
 	
 	if (state.cryptoMiningState && typeof state.cryptoMiningState === 'object') {
 	  cleanState.cryptoMiningState = {
-		active: sanitizeNumber(state.cryptoMiningState.active, false, 0, 1) === 1,
+		active: Boolean(state.cryptoMiningState.active),
 		mode: state.cryptoMiningState.mode === 'high' ? 'high' : 'low',
 		totalMined: sanitizeNumber(state.cryptoMiningState.totalMined, 0, 0, MAX_SAFE_INTEGER),
 		lastUpdate: sanitizeNumber(state.cryptoMiningState.lastUpdate, Date.now(), 0, Date.now() + 86400000)
@@ -139,6 +140,8 @@ function sanitizeGameState(state) {
         cleanState[prop] = state[prop];
       }
     });
+    
+    cleanState.offlineProcessed = false;
 
     return cleanState;
   } catch (e) {
@@ -169,8 +172,12 @@ async function performSave() {
   pendingSave = false;
 
   try {
+    if (typeof window.updateLastOnlineTime === 'function') {
+      window.updateLastOnlineTime();
+    }
+
     game.lastTick = Date.now();
-    game.version = '1.2.1';
+    game.version = '1.2.3';
     
     if (!game.bots || typeof game.bots !== 'object') {
       game.bots = { t1:0, t2:0, t3:0, mobile:0 };
@@ -243,7 +250,7 @@ async function performSave() {
     
     try {
       const emergency = {
-        version: '1.2.1',
+        version: '1.2.3',
         bots: { t1:0, t2:0, t3:0, mobile:0 },
         money: game.money || 0,
         prestige: game.prestige || 0

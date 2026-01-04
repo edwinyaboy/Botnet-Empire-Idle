@@ -436,7 +436,10 @@ class CryptoMining {
                     newEstContainer.appendChild(estTitle);
                     newEstContainer.appendChild(estText);
                     
-                    this.elements.container.insertBefore(newEstContainer, this.elements.container.querySelector('.crypto-info'));
+                    const infoPanel = this.elements.container.querySelector('.crypto-info');
+					  if (infoPanel && infoPanel.parentNode) {
+						infoPanel.parentNode.insertBefore(newEstContainer, infoPanel);
+					}
                 }
                 
                 const estText = this.elements.container.querySelector('#cryptoEstimates');
@@ -541,61 +544,29 @@ class CryptoMining {
             }
             
             if (data) {
-                this.state.active = Boolean(data.active);
-                this.state.mode = data.mode || 'low';
-                this.state.totalMined = sanitizeNumber(data.totalMined, 0, 0);
-                this.state.lastUpdate = data.lastUpdate || Date.now();
-                
-                const now = Date.now();
-                const lastUpdate = this.state.lastUpdate;
-                const timeDiff = now - lastUpdate;
-                const maxDiff = 4 * 3600 * 1000;
-                const cappedDiff = Math.min(timeDiff, maxDiff);
-                
-                if (this.state.active) {
-                    this.miningActive = true;
-                    
-                    if (this.elements.toggleBtn) {
-                        this.elements.toggleBtn.textContent = 'Stop Mining';
-                        this.elements.toggleBtn.className = 'danger';
-                    }
-                    
-                    this.startUpdateInterval();
-                    
-                    if (cappedDiff > 1000 && typeof window.game !== 'undefined' && window.game.bots) {
-                        const totalBots = sanitizeNumber(
-                            (window.game.bots.t1 || 0) + 
-                            (window.game.bots.t2 || 0) + 
-                            (window.game.bots.t3 || 0) + 
-                            (window.game.bots.mobile || 0)
-                        );
-                        
-                        if (totalBots > 0) {
-                            const offlineHours = cappedDiff / (1000 * 3600);
-                            const rate = this.currentRate[this.state.mode];
-                            const effectiveHours = offlineHours * 0.5;
-                            const mined = totalBots * rate * effectiveHours * 3600;
-                            
-                            if (mined > 0) {
-                                window.game.money = sanitizeNumber(window.game.money + mined, 0, 0);
-                                window.game.totalEarned = sanitizeNumber(window.game.totalEarned + mined, 0, 0);
-                                this.state.totalMined = sanitizeNumber(this.state.totalMined + mined, 0, 0);
-                                
-                                if (typeof window.saveGame === 'function') {
-                                    window.saveGame();
-                                }
-                            }
-                        }
-                    }
-                    
-                    this.state.lastUpdate = now;
-                } else {
-                    if (this.elements.toggleBtn) {
-                        this.elements.toggleBtn.textContent = 'Start Mining';
-                        this.elements.toggleBtn.className = 'primary';
-                    }
-                }
-            }
+  this.state.active = Boolean(data.active);
+  this.state.mode = (data.mode === 'high') ? 'high' : 'low';
+  this.state.totalMined = sanitizeNumber(data.totalMined, 0, 0);
+  this.state.lastUpdate = data.lastUpdate || Date.now();
+  
+  if (this.state.active) {
+    this.miningActive = true;
+    
+    if (this.elements.toggleBtn) {
+      this.elements.toggleBtn.textContent = 'Stop Mining';
+      this.elements.toggleBtn.className = 'danger';
+    }
+    
+    this.startUpdateInterval();
+	  } else {
+		if (this.elements.toggleBtn) {
+		  this.elements.toggleBtn.textContent = 'Start Mining';
+		  this.elements.toggleBtn.className = 'primary';
+		  }
+	  }
+  
+	this.state.lastUpdate = Date.now();
+	  }
         } catch (e) {
             console.error("Error loading crypto state:", e);
         }

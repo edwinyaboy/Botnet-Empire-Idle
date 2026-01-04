@@ -1,7 +1,7 @@
 const MAX_SAFE_INTEGER = 9007199254740991;
 const MAX_OFFLINE_HOURS = 4;
 const OFFLINE_EFFICIENCY = 0.5;
-const MIN_OFFLINE_FOR_PROGRESS = 5 * 60 * 1000;
+const MIN_OFFLINE_FOR_PROGRESS = 30 * 1000;
 const OFFLINE_EVENT_MIN_HOURS = 2;
 const OFFLINE_EVENT_MAX_HOURS = 4;
 
@@ -18,6 +18,7 @@ class OfflineSystem {
         this.elements = {};
         this.hasShownPopup = false;
         this.popupActive = false;
+        this.offlineProcessed = false;
         this.offlineEvents = [
             {
                 type: 'bot_gain',
@@ -70,7 +71,7 @@ class OfflineSystem {
         return this.popupActive;
     }
     
-        createPopup() {
+    createPopup() {
         try {
             const existing = document.getElementById('offlinePopup');
             if (existing) existing.remove();
@@ -108,7 +109,7 @@ class OfflineSystem {
             
             const titleDiv = document.createElement('div');
             titleDiv.className = 'modal-title';
-            titleDiv.textContent = '📊 Offline Progress';
+            titleDiv.textContent = 'OFFLINE PROGRESS';
             titleDiv.style.cssText = 'margin:0 0 16px 0; color:#58a6ff; font-size:18px; font-weight:600; text-align:center;';
             
             const contentDiv = document.createElement('div');
@@ -170,33 +171,24 @@ class OfflineSystem {
         }
     }
     
-    updatePopup(offlineInfo, botGains, cashGains, cryptoGains, eventInfo = null) {
-        try {
-            if (!this.elements.popup) return;
-            
-            const hours = offlineInfo.hours.toFixed(2);
-            const eligibleHours = offlineInfo.eligibleHours.toFixed(2);
-            
-            this.elements.summary.innerHTML = `
-                You were offline for <span style="color:#58a6ff; font-weight:600;">${eligibleHours} hours</span>.<br>
-                <span style="color:#8b949e; font-size:12px;">(50% efficiency applied: ${hours} effective hours)</span>
-            `;
-            
-            this.elements.offlineTime.textContent = `⏱️ ${eligibleHours} hours offline`;
+    updatePopup(offlineInfo, botGains, cashGains, eventInfo = null) {
+    try {
+        if (!this.elements.popup) return;
+        
+        const timeDisplay = formatTimeDisplay(offlineInfo.hours);
+        const eligibleTimeDisplay = formatTimeDisplay(offlineInfo.eligibleHours);
+        
+        this.elements.offlineTime.innerHTML = `You earned <span style="color:#0366d6; font-weight:600">${eligibleTimeDisplay}</span><br>worth of progress while offline`;
             
             let gainsHTML = '';
             if (botGains > 0) {
-                gainsHTML += `<div style="color:#0366d6; margin:4px 0;">🤖 +${botGains.toFixed(0)} T3 bots</div>`;
+              gainsHTML += `<div style="color:#187ff2; margin:4px 0;">Gained ${botGains.toFixed(0)} hacked computers</div>`;
             }
             if (cashGains > 0) {
-                gainsHTML += `<div style="color:#58a6ff; margin:4px 0;">💰 +$${cashGains.toFixed(2)}</div>`;
+              gainsHTML += `<div style="color:#58a6ff; margin:4px 0;">Gained $${cashGains.toFixed(2)}</div>`;
             }
-            if (cryptoGains > 0) {
-                gainsHTML += `<div style="color:#d29922; margin:4px 0;">⛏️ +$${cryptoGains.toFixed(2)} from crypto mining</div>`;
-            }
-            
             if (!gainsHTML) {
-                gainsHTML = '<div style="color:#8b949e;">No significant gains during offline period.</div>';
+                gainsHTML = '<div style="color:#8b949e;">Your hacked computers maintained operations while you were away.</div>';
             }
             
             this.elements.gains.innerHTML = gainsHTML;
@@ -235,12 +227,21 @@ class OfflineSystem {
     
     calculateOfflineTime() {
         try {
-            const now = Date.now();
-            const timeDiff = now - this.lastOnlineTime;
-            
-            if (timeDiff < MIN_OFFLINE_FOR_PROGRESS) {
-                return { hours: 0, eligibleHours: 0, wasOffline: false };
-            }
+		  const now = Date.now();
+		  const timeDiff = now - this.lastOnlineTime;
+    
+		console.log("Offline time calculation:", {
+		  now,
+		  lastOnlineTime: this.lastOnlineTime,
+		  timeDiff,
+		  timeDiffMinutes: timeDiff / 60000,
+		  minRequired: MIN_OFFLINE_FOR_PROGRESS
+		});
+    
+		if (timeDiff < MIN_OFFLINE_FOR_PROGRESS) {
+	      console.log("Not enough offline time for progress");
+		  return { hours: 0, eligibleHours: 0, wasOffline: false };
+		}
             
             const offlineSeconds = timeDiff / 1000;
             const maxOfflineSeconds = MAX_OFFLINE_HOURS * 3600;
@@ -262,67 +263,65 @@ class OfflineSystem {
         }
     }
     
-    processOfflineProgress(game, calculateBPS, calculateMPS, getCryptoMiningInstance) {
-        try {
-            const offlineInfo = this.calculateOfflineTime();
-            
-            if (!offlineInfo.wasOffline || offlineInfo.hours <= 0) {
-                this.saveState();
-                return;
-            }
-            
-            const bps = calculateBPS ? calculateBPS(OFFLINE_EFFICIENCY) : 0;
-            const mps = calculateMPS ? calculateMPS(OFFLINE_EFFICIENCY) : 0;
-
-            let cryptoMultiplier = 1;
-            if (getCryptoMiningInstance) {
-                const cryptoInstance = getCryptoMiningInstance();
-                if (cryptoInstance && cryptoInstance.getBotGenerationMultiplier) {
-                    cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier();
-                }
-            }
-
-            const botGains = bps * offlineInfo.hours * 3600 * cryptoMultiplier;
-            const cashGains = mps * offlineInfo.hours * 3600;
-
-            let cryptoGains = 0;
-              const cryptoInstance = getCryptoMiningInstance ? getCryptoMiningInstance() : null;
-			    if (cryptoInstance && cryptoInstance.state && cryptoInstance.state.active) {
-		  	  const totalBots = (game.bots?.t1 || 0) + (game.bots?.t2 || 0) + (game.bots?.t3 || 0) + (game.bots?.mobile || 0);
-		 	    if (totalBots > 0) {
-			  const cryptoRate = cryptoInstance.currentRate ? cryptoInstance.currentRate[cryptoInstance.state.mode] || 0 : 0;
-			    cryptoGains = totalBots * cryptoRate * offlineInfo.hours * 3600;
-			  } else {
-			  cryptoGains = 0;
-			  }
-			}
-
-            if (botGains > 0) {
-                game.bots.t3 = sanitizeNumber(game.bots.t3 + botGains, 0, 0);
-            }
-            
-            const totalCashGains = cashGains + cryptoGains;
-            if (totalCashGains > 0) {
-                game.money = sanitizeNumber(game.money + totalCashGains, 0, 0);
-                game.totalEarned = sanitizeNumber(game.totalEarned + totalCashGains, 0, 0);
-            }
-
-            let eventInfo = null;
-            if (offlineInfo.eligibleHours >= OFFLINE_EVENT_MIN_HOURS) {
-                eventInfo = this.triggerOfflineEvent(offlineInfo.eligibleHours, game);
-            }
-            
-            this.lastOnlineTime = Date.now();
-            
-            this.createPopup();
-            this.updatePopup(offlineInfo, botGains, totalCashGains, cryptoGains, eventInfo);
-            
-            this.saveState();
-            
-        } catch (e) {
-            console.error("Error processing offline progress:", e);
+    processOfflineProgress(game, calculateBPS, calculateMPS) {
+    try {
+        if (this.offlineProcessed || (game && game.offlineProcessed)) {
+            return;
         }
-    }
+        
+        this.offlineProcessed = true;
+        if (game) {
+            game.offlineProcessed = true;
+        }
+        
+        const offlineInfo = this.calculateOfflineTime();  // MOVE THIS UP
+        
+        if (!offlineInfo.wasOffline || offlineInfo.hours <= 0) {
+            const now = Date.now();
+            this.lastOnlineTime = now;
+            this.saveState();
+            return;
+        }
+        
+        const bps = calculateBPS ? calculateBPS(OFFLINE_EFFICIENCY) : 0;
+        const mps = calculateMPS ? calculateMPS(OFFLINE_EFFICIENCY) : 0;
+
+        let cryptoMultiplier = 1;
+        if (typeof window.getCryptoMiningInstance === 'function') {
+            const cryptoInstance = window.getCryptoMiningInstance();
+            if (cryptoInstance && cryptoInstance.getBotGenerationMultiplier) {
+                cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier();
+            }
+        }
+
+        const botGains = bps * offlineInfo.hours * 3600;
+        const cashGains = mps * offlineInfo.hours * 3600;
+
+        if (botGains > 0) {
+            game.bots.t3 = sanitizeNumber(game.bots.t3 + botGains, 0, 0);
+        }
+        
+        if (cashGains > 0) {
+            game.money = sanitizeNumber(game.money + cashGains, 0, 0);
+            game.totalEarned = sanitizeNumber(game.totalEarned + cashGains, 0, 0);
+        }
+
+        let eventInfo = null;
+        if (offlineInfo.eligibleHours >= OFFLINE_EVENT_MIN_HOURS) {
+            eventInfo = this.triggerOfflineEvent(offlineInfo.eligibleHours, game);
+        }
+        
+        this.createPopup();
+        this.updatePopup(offlineInfo, botGains, cashGains, eventInfo);
+        
+        const now = Date.now();
+        this.lastOnlineTime = now;
+        this.saveState();
+        
+		} catch (e) {
+			console.error("Error processing offline progress:", e);
+		}
+	}
     
     triggerOfflineEvent(hoursOffline, game) {
         try {
@@ -378,7 +377,8 @@ class OfflineSystem {
     saveState() {
         try {
             localStorage.setItem('offline_system', JSON.stringify({
-                lastOnlineTime: this.lastOnlineTime
+                lastOnlineTime: this.lastOnlineTime,
+                offlineProcessed: this.offlineProcessed
             }));
         } catch (e) {
             console.error("Error saving offline state:", e);
@@ -391,6 +391,7 @@ class OfflineSystem {
             if (saved) {
                 const data = JSON.parse(saved);
                 this.lastOnlineTime = sanitizeNumber(data.lastOnlineTime, Date.now(), 0, Date.now() + 86400000);
+                this.offlineProcessed = Boolean(data.offlineProcessed);
             }
         } catch (e) {
             console.error("Error loading offline state:", e);
@@ -399,7 +400,33 @@ class OfflineSystem {
     
     updateLastOnlineTime() {
         this.lastOnlineTime = Date.now();
+        this.offlineProcessed = false;
         this.saveState();
+    }
+}
+
+function formatTimeDisplay(hours) {
+    const totalSeconds = Math.round(hours * 3600);
+    
+    if (totalSeconds < 60) {
+        return `${totalSeconds} second${totalSeconds === 1 ? '' : 's'}`;
+    }
+    
+    const totalMinutes = Math.round(totalSeconds / 60);
+    
+    if (totalMinutes < 60) {
+        return `${totalMinutes} minute${totalMinutes === 1 ? '' : 's'}`;
+    }
+    
+    const fullHours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+    
+    if (remainingMinutes === 0) {
+        return `${fullHours} hour${fullHours === 1 ? '' : 's'}`;
+    } else if (fullHours === 0) {
+        return `${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}`;
+    } else {
+        return `${fullHours} hour${fullHours === 1 ? '' : ''} and ${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}`;
     }
 }
 
@@ -421,9 +448,9 @@ function getOfflineSystemInstance() {
     return offlineSystemInstance;
 }
 
-function processOfflineProgress(game, calculateBPS, calculateMPS, getCryptoMiningInstance) {
+function processOfflineProgress(game, calculateBPS, calculateMPS) {
     if (offlineSystemInstance) {
-        offlineSystemInstance.processOfflineProgress(game, calculateBPS, calculateMPS, getCryptoMiningInstance);
+        offlineSystemInstance.processOfflineProgress(game, calculateBPS, calculateMPS);
     }
 }
 

@@ -1,6 +1,6 @@
 import { game } from './state.js';
 
-const EVENT_TYPES = ['raid', 'outage', 'boom'];
+const EVENT_TYPES = ['raid', 'outage', 'boom', 'crypto'];
 const MAX_EVENT_DURATION = 300000;
 
 function sanitizeString(str) {
@@ -133,21 +133,28 @@ export function triggerEvent() {
           text:"FBI raid detected on network infrastructure.",
           type:"raid",
           duration:120000,
-          effect:"Automatically hacked computers reduced by 30% for 2 minutes."
+          effect:"Automatically hacked computers reduced by 30% for 2 minutes"
         },
         {
           title:"NETWORK OUTAGE",
           text:"Major ISP experiencing service disruption.",
           type:"outage",
-          duration:90000,
-          effect:"Cash per second reduced by 50% for 90 seconds."
+          duration:120000,
+          effect:"Cash per second reduced by 50% for 2 minutes"
         },
         {
           title:"EXPLOIT DISCOVERED",
           text:"Critical zero-day vulnerability identified.",
           type:"boom",
           duration:120000,
-          effect:"Automatically hacked computers increased by 100% for 2 minutes."
+          effect:"Automatically hacked computers increased by 100% for 2 minutes"
+        },
+		{
+          title:"CRYPTO BOOM",
+          text:"Crypto market has skyrocketed.",
+          type:"crypto",
+          duration:120000,
+          effect:"Cash per second increased by 50% for 2 minutes"
         }
       ];
       

@@ -107,6 +107,12 @@ function performPrestigeReset() {
     game.eventEndTime = 0;
     game.eventDuration = null;
     game.eventAcknowledged = false;
+	game.cryptoMiningState = {
+	  active: false,
+	  mode: 'low',
+	  totalMined: 0,
+	  lastUpdate: Date.now()
+	};
 
     const now = Date.now();
     const minWait = 600000;

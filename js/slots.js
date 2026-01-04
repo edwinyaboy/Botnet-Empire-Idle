@@ -611,7 +611,10 @@ class HackerSlots {
         const currentMoney = sanitizeNumber(window.game.money, 0, 0);
         const freeSpins = sanitizeNumber(this.state.freeSpins, 0, 0, 1000);
 
-        if (freeSpins === 0 && currentMoney < bet) return;
+        const hasEnoughFreeSpins = freeSpins > 0;
+		const hasEnoughMoney = currentMoney >= bet;
+
+		if (!hasEnoughFreeSpins && !hasEnoughMoney) return;
 
         try {
             this.isSpinning = true;

@@ -47,6 +47,8 @@ export function update() {
       eventMoneyMult = 0.5;
     } else if (game.activeEvent === "boom") {
       eventBotMult = 2.0;
+	} else if (game.activeEvent === "crypto") {
+      eventBotMult = 0.5;
     }
     
     const bps = calculateBPS();
@@ -174,10 +176,10 @@ export function calculateBPS(offlineEfficiency = 1) {
         const active = game.tools[id]?.active ? 1 : 0;
         if (active > 0) {
           const base = sanitizeNumber(tool.base, 0, 0, MAX_SAFE_INTEGER);
-          bps += base * active * totalMultiplier;
+          bps += base * active * totalMultiplier * cryptoMultiplier;
         }
-      }
-    }
+     }
+  }
 
     return sanitizeNumber(bps, 0, 0, MAX_SAFE_INTEGER);
   } catch (e) {
@@ -192,7 +194,7 @@ export function calculateMPS(offlineEfficiency = 1) {
     const achievementBonus = sanitizeNumber(getAchievementBonus("income"), 1, 1, 1000);
     const totalMultiplier = (1 + prestigeBonus * 0.10) * achievementBonus * offlineEfficiency;
 
-    if (!isFinite(totalMultiplier) || totalMultiplier < 1) {
+    if (!isFinite(totalMultiplier) || totalMultiplier < 0) {
       console.error("Invalid totalMultiplier in calculateMPS");
       return 0;
     }
@@ -377,7 +379,7 @@ export function resetGame() {
     });
 
     Object.assign(game, {
-      version: '1.2.1',
+      version: '1.2.3',
       bots: { t1:0, t2:0, t3:0, mobile:0 },
       money:0,
       prestige:0,
@@ -410,10 +412,11 @@ export function resetGame() {
         mode: 'low',
         totalMined: 0,
         lastUpdate: Date.now()
-      }
+      },
+      offlineProcessed: false
     });
     
-    localStorage.setItem("botnet_empire_version", "1.2.1");
+    localStorage.setItem("botnet_empire_version", "1.2.3");
     
     if (typeof window.saveGame === 'function') {
       window.saveGame();
@@ -426,6 +429,7 @@ export function resetGame() {
     if (typeof window.getCryptoMiningInstance === 'function') {
       const cryptoInstance = window.getCryptoMiningInstance();
       if (cryptoInstance) {
+        cryptoInstance.offlineProcessed = false;
         cryptoInstance.state = {
           active: false,
           mode: 'low',
@@ -451,19 +455,6 @@ export function resetGame() {
         }
       }
     }
-	
-	if (typeof window.getCryptoMiningInstance === 'function') {
-	  const cryptoInstance = window.getCryptoMiningInstance();
-      if (cryptoInstance) {
-        cryptoInstance.stopMining();
-        cryptoInstance.state = {
-            active: false,
-            mode: 'low',
-            lastUpdate: Date.now(),
-            totalMined: 0
-        };
-	  }
-	}
     
     setTimeout(() => {
       location.reload();

@@ -49,30 +49,32 @@ export function spread() {
     roll = Math.min(1, roll + tierBonus);
     
     let clickMult = 1;
-    try {
-      const achievementBonus = getAchievementBonus("click");
+	try {
+	const achievementBonus = getAchievementBonus("click");
       if (typeof achievementBonus === 'number' && !isNaN(achievementBonus)) {
-        clickMult *= achievementBonus;
-      }
-      
-      if (game.upgrades && typeof game.upgrades === 'object') {
-        for (const id in game.upgrades) {
-          if (game.upgrades[id] && upgrades[id] && upgrades[id].effect === "click_multiplier") {
-            const upgradeValue = upgrades[id].value || 0;
-            clickMult *= 1 + upgradeValue;
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Error calculating click multiplier:", e);
-      clickMult = 1;
-    }
+		clickMult = achievementBonus;
+	}
+  
+  let upgradeMultiplier = 1;
+  if (game.upgrades && typeof game.upgrades === 'object') {
+    for (const id in game.upgrades) {
+      if (game.upgrades[id] && upgrades[id] && upgrades[id].effect === "click_multiplier") {
+        const upgradeValue = upgrades[id].value || 0;
+        upgradeMultiplier *= 1 + upgradeValue;
+		}
+	  }
+	}
+	clickMult *= upgradeMultiplier;
+	} catch (e) {
+	  console.error("Error calculating click multiplier:", e);
+	  clickMult = 1;
+	}
 
-    if (!isFinite(clickMult) || clickMult < 1) {
-      clickMult = 1;
-    }
+	if (!isFinite(clickMult) || clickMult < 1) {
+	  clickMult = 1;
+	}
 
-    const amount = Math.max(1, Math.floor(10 * clickMult));
+	const amount = Math.max(1, Math.floor(10 * clickMult));
     
     const mobileUnlocked = (game.unlocks && game.unlocks.mobile === true);
 
@@ -86,15 +88,15 @@ export function spread() {
       }
     });
     
-    if (mobileUnlocked && roll > 0.98) {
+    if (mobileUnlocked && roll > 0.99) {
       game.bots.mobile = Math.floor(game.bots.mobile + amount);
-    } else if (roll > 0.94) {
-      game.bots.t1 = Math.floor(game.bots.t1 + amount);
-    } else if (roll > 0.72) {
-      game.bots.t2 = Math.floor(game.bots.t2 + amount);
-    } else {
-      game.bots.t3 = Math.floor(game.bots.t3 + amount);
-    }
+	} else if (roll > 0.94) {
+	  game.bots.t1 = Math.floor(game.bots.t1 + amount);
+	} else if (roll > 0.72) {
+	  game.bots.t2 = Math.floor(game.bots.t2 + amount);
+	} else {
+	  game.bots.t3 = Math.floor(game.bots.t3 + amount);
+	}
   } catch (e) {
     console.error("Critical error in spread():", e);
   } finally {
@@ -154,8 +156,10 @@ export function getAchievementBonus(type) {
     }
     
     for (const a of achievements) {
-      if (game.achievements && game.achievements[a.id] && a.reward === type && typeof a.bonus === 'number') {
-        bonus += a.bonus;
+      if (game.achievements && game.achievements[a.id] && a.reward === type) {
+        if (typeof a.bonus === 'number') {
+          bonus += a.bonus;
+        }
       }
     }
     

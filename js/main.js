@@ -18,7 +18,7 @@ const VERSION_KEY = "botnet_empire_version";
 const SAVE_KEY = "botnet_empire_v1";
 const MIGRATION_LOCK_KEY = "botnet_migration_in_progress";
 const MIGRATION_BACKUP_KEY = "botnet_migration_backup";
-const CURRENT_VERSION = '1.2.1';
+const CURRENT_VERSION = '1.2.3';
 
 const eventHandlers = new Map();
 
@@ -63,7 +63,8 @@ function migrateGameState(loadedGame) {
     activeToolTab:null,
     tutorialComplete:false,
     priceDirection:0,
-    eventAcknowledged:false
+    eventAcknowledged:false,
+    offlineProcessed:false
   };
 
   const migrated = JSON.parse(JSON.stringify(defaultGame));
@@ -97,6 +98,8 @@ function migrateGameState(loadedGame) {
   if (!Array.isArray(migrated.moneyGraph)) {
     migrated.moneyGraph = [];
   }
+  
+  migrated.offlineProcessed = false;
   
   migrated.version = CURRENT_VERSION;
   
@@ -195,6 +198,10 @@ function validateGameState() {
       const defaults = { t1:1, t2:0.5, t3:0.15, mobile:1.5 };
       game.prices[tier] = sanitizeNumber(game.prices[tier], defaults[tier] || 1, 0.01, 100);
     }
+    
+    if (typeof game.offlineProcessed !== 'boolean') {
+      game.offlineProcessed = false;
+    }
   } catch (e) {
     console.error("Error validating game state:", e);
   }
@@ -258,7 +265,6 @@ window.addEventListener('load', () => {
     }
     
     const saved = localStorage.getItem(SAVE_KEY);
-    const savedVersion = localStorage.getItem(VERSION_KEY);
     
     let migrationPerformed = false;
     
@@ -270,35 +276,18 @@ window.addEventListener('load', () => {
         localStorage.setItem(MIGRATION_LOCK_KEY, 'true');
         
         if (loadedVersion !== CURRENT_VERSION) {
-          const confirmation = confirm(
-            `New update detected (${loadedVersion} → ${CURRENT_VERSION})! Your save data needs to be migrated.\n\n` +
-            "Click OK to migrate (recommended)\n" +
-            "Click Cancel to reset and start fresh\n\n" +
-            "Note: A backup will be created automatically."
-          );
+          console.log(`Migrating from ${loadedVersion} to ${CURRENT_VERSION}`);
           
-          if (confirmation) {
-            const migratedGame = migrateGameState(parsed);
-            Object.assign(game, migratedGame);
-            
-            localStorage.setItem(SAVE_KEY, JSON.stringify(game));
-            localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-            
-            localStorage.removeItem(MIGRATION_LOCK_KEY);
-            localStorage.removeItem(MIGRATION_BACKUP_KEY);
-            
-            alert("Save data migrated successfully!");
-            migrationPerformed = true;
-            saveGame();
-            
-            setTimeout(() => location.reload(), 100);
-            return;
-          } else {
-            localStorage.removeItem(MIGRATION_LOCK_KEY);
-            localStorage.removeItem(MIGRATION_BACKUP_KEY);
-            resetGame();
-            return;
-          }
+          const migratedGame = migrateGameState(parsed);
+          Object.assign(game, migratedGame);
+          
+          localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+          localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+          
+          localStorage.removeItem(MIGRATION_LOCK_KEY);
+          
+          migrationPerformed = true;
+          saveGame();
         } else {
           Object.assign(game, parsed);
         }
@@ -308,19 +297,7 @@ window.addEventListener('load', () => {
       } catch (e) {
         console.error("Error loading save:", e);
         
-        const backup = localStorage.getItem(MIGRATION_BACKUP_KEY);
-        if (backup) {
-          try {
-            localStorage.setItem(SAVE_KEY, backup);
-            console.log("Restored corrupted save from backup");
-          } catch (restoreError) {
-            console.error("Failed to restore:", restoreError);
-          }
-        }
-        
         localStorage.removeItem(MIGRATION_LOCK_KEY);
-        resetGame();
-        return;
       }
     }
     
@@ -347,6 +324,10 @@ window.addEventListener('load', () => {
         game.tutorialComplete = false;
       }
       
+      if (game.offlineProcessed === undefined) {
+        game.offlineProcessed = false;
+      }
+      
       saveGame();
     }
     
@@ -356,15 +337,14 @@ window.addEventListener('load', () => {
     }
     
     validateGameState();
+    
     initOfflineSystem();
     initCryptoAfterGameLoad();
     
-    processOfflineProgress(
-      game, 
-      calculateBPS, 
-      calculateMPS,
-      () => getCryptoMiningInstance ? getCryptoMiningInstance() : null
-    );
+    if (!game.offlineProcessed) {
+      processOfflineProgress(game, calculateBPS, calculateMPS);
+      game.offlineProcessed = true;
+    }
     
     if (game.activeEvent && !game.eventAcknowledged) {
       setTimeout(() => {
@@ -477,3 +457,4 @@ window.importSave = importSave;
 window.resetGame = resetGame;
 window.enterSlots = enterSlots;
 window.isOfflinePopupActive = isOfflinePopupActive;
+window.updateLastOnlineTime = updateLastOnlineTime;

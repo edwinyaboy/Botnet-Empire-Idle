@@ -98,7 +98,7 @@ export function showTutorial() {
       },
       {
         title: 'Random Events',
-        text: 'Events occur every 10-30 minutes: FBI raids (-30% automatically hacked computers), ISP outages (-50% automatically gained income), or exploit discoveries (+100% automatically hacked computers). Effects last 90-120 seconds.'
+        text: 'Events occur every 5-10 minutes causing random effects that last 120 seconds.'
       }
     ];
     
