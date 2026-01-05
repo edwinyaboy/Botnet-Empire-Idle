@@ -125,6 +125,49 @@ function batchUpdateUI() {
   return true;
 }
 
+function setupProfileToggle() {
+  const profileBtn = document.getElementById('profileToggleBtn');
+  const profilePanel = document.getElementById('profilePanel');
+  
+  if (profileBtn && profilePanel) {
+    const hackerId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const hackerIdElement = document.getElementById('profileHackerId');
+    if (hackerIdElement) {
+      hackerIdElement.textContent = hackerId;
+    }
+    
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = profilePanel.style.display !== 'none';
+      profilePanel.style.display = isVisible ? 'none' : 'block';
+      
+      if (isVisible) {
+        profileBtn.classList.remove('active');
+      } else {
+        profileBtn.classList.add('active');
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (profilePanel.style.display === 'block' && 
+          !profilePanel.contains(e.target) && 
+          e.target !== profileBtn) {
+        profilePanel.style.display = 'none';
+        profileBtn.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && profilePanel.style.display === 'block') {
+        profilePanel.style.display = 'none';
+        profileBtn.classList.remove('active');
+      }
+    });
+  }
+}
+
+setupProfileToggle();
+
 function updateDynamicUI() {
   if (window.slotsActive) return;
   

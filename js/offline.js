@@ -172,43 +172,43 @@ class OfflineSystem {
     }
     
     updatePopup(offlineInfo, botGains, cashGains, eventInfo = null) {
-    try {
-        if (!this.elements.popup) return;
-        
-        const timeDisplay = formatTimeDisplay(offlineInfo.hours);
-        const eligibleTimeDisplay = formatTimeDisplay(offlineInfo.eligibleHours);
-        
-        this.elements.offlineTime.innerHTML = `You earned <span style="color:#0366d6; font-weight:600">${eligibleTimeDisplay}</span><br>worth of progress while offline`;
+        try {
+            if (!this.elements.popup) return;
             
-            let gainsHTML = '';
-            if (botGains > 0) {
-              gainsHTML += `<div style="color:#187ff2; margin:4px 0;">Gained ${botGains.toFixed(0)} hacked computers</div>`;
-            }
-            if (cashGains > 0) {
-              gainsHTML += `<div style="color:#58a6ff; margin:4px 0;">Gained $${cashGains.toFixed(2)}</div>`;
-            }
-            if (!gainsHTML) {
-                gainsHTML = '<div style="color:#8b949e;">Your hacked computers maintained operations while you were away.</div>';
-            }
+            const timeDisplay = formatTimeDisplay(offlineInfo.hours);
+            const eligibleTimeDisplay = formatTimeDisplay(offlineInfo.eligibleHours);
             
-            this.elements.gains.innerHTML = gainsHTML;
-            
-            if (eventInfo) {
-                this.elements.eventPanel.style.display = 'block';
-                this.elements.eventPanel.style.borderColor = eventInfo.color;
-                this.elements.eventPanel.style.background = `${eventInfo.color}20`;
-                this.elements.eventPanel.innerHTML = `
-                    <div style="color:${eventInfo.color}; font-weight:700; font-size:14px; margin-bottom:6px;">${eventInfo.title}</div>
-                    <div style="color:#c9d1d9; font-size:12px; margin-bottom:8px;">${eventInfo.message}</div>
-                    <div style="color:${eventInfo.color}; font-weight:600; font-size:13px;">${eventInfo.effectText}</div>
-                `;
-            } else {
-                this.elements.eventPanel.style.display = 'none';
+            this.elements.offlineTime.innerHTML = `You earned <span style="color:#0366d6; font-weight:600">${eligibleTimeDisplay}</span><br>worth of progress while offline`;
+                
+                let gainsHTML = '';
+                if (botGains > 0) {
+                  gainsHTML += `<div style="color:#187ff2; margin:4px 0;">Gained ${botGains.toFixed(0)} hacked computers</div>`;
+                }
+                if (cashGains > 0) {
+                  gainsHTML += `<div style="color:#58a6ff; margin:4px 0;">Gained $${cashGains.toFixed(2)}</div>`;
+                }
+                if (!gainsHTML) {
+                    gainsHTML = '<div style="color:#8b949e;">Your hacked computers maintained operations while you were away.</div>';
+                }
+                
+                this.elements.gains.innerHTML = gainsHTML;
+                
+                if (eventInfo) {
+                    this.elements.eventPanel.style.display = 'block';
+                    this.elements.eventPanel.style.borderColor = eventInfo.color;
+                    this.elements.eventPanel.style.background = `${eventInfo.color}20`;
+                    this.elements.eventPanel.innerHTML = `
+                        <div style="color:${eventInfo.color}; font-weight:700; font-size:14px; margin-bottom:6px;">${eventInfo.title}</div>
+                        <div style="color:#c9d1d9; font-size:12px; margin-bottom:8px;">${eventInfo.message}</div>
+                        <div style="color:${eventInfo.color}; font-weight:600; font-size:13px;">${eventInfo.effectText}</div>
+                    `;
+                } else {
+                    this.elements.eventPanel.style.display = 'none';
+                }
+                
+            } catch (e) {
+                console.error("Error updating offline popup:", e);
             }
-            
-        } catch (e) {
-            console.error("Error updating offline popup:", e);
-        }
     }
     
     hidePopup() {
@@ -227,22 +227,22 @@ class OfflineSystem {
     
     calculateOfflineTime() {
         try {
-		  const now = Date.now();
-		  const timeDiff = now - this.lastOnlineTime;
-    
-		console.log("Offline time calculation:", {
-		  now,
-		  lastOnlineTime: this.lastOnlineTime,
-		  timeDiff,
-		  timeDiffMinutes: timeDiff / 60000,
-		  minRequired: MIN_OFFLINE_FOR_PROGRESS
-		});
-    
-		if (timeDiff < MIN_OFFLINE_FOR_PROGRESS) {
-	      console.log("Not enough offline time for progress");
-		  return { hours: 0, eligibleHours: 0, wasOffline: false };
-		}
-            
+            const now = Date.now();
+            const timeDiff = now - this.lastOnlineTime;
+        
+        console.log("Offline time calculation:", {
+            now,
+            lastOnlineTime: this.lastOnlineTime,
+            timeDiff,
+            timeDiffMinutes: timeDiff / 60000,
+            minRequired: MIN_OFFLINE_FOR_PROGRESS
+        });
+        
+        if (timeDiff < MIN_OFFLINE_FOR_PROGRESS) {
+            console.log("Not enough offline time for progress");
+            return { hours: 0, eligibleHours: 0, wasOffline: false };
+        }
+                
             const offlineSeconds = timeDiff / 1000;
             const maxOfflineSeconds = MAX_OFFLINE_HOURS * 3600;
             
@@ -264,64 +264,88 @@ class OfflineSystem {
     }
     
     processOfflineProgress(game, calculateBPS, calculateMPS) {
-    try {
-        if (this.offlineProcessed || (game && game.offlineProcessed)) {
-            return;
-        }
-        
-        this.offlineProcessed = true;
-        if (game) {
-            game.offlineProcessed = true;
-        }
-        
-        const offlineInfo = this.calculateOfflineTime();  // MOVE THIS UP
-        
-        if (!offlineInfo.wasOffline || offlineInfo.hours <= 0) {
+        try {
+            if (this.offlineProcessed || (game && game.offlineProcessed)) {
+                return;
+            }
+            
+            this.offlineProcessed = true;
+            if (game) {
+                game.offlineProcessed = true;
+            }
+            
+            const offlineInfo = this.calculateOfflineTime();
+            
+            if (!offlineInfo.wasOffline || offlineInfo.hours <= 0) {
+                const now = Date.now();
+                this.lastOnlineTime = now;
+                this.saveState();
+                return;
+            }
+            
+            // DEBUG LOGGING
+            console.log("DEBUG OFFLINE PROGRESS:");
+            console.log("  - Offline hours:", offlineInfo.hours);
+            console.log("  - Eligible hours:", offlineInfo.eligibleHours);
+            console.log("  - Effective hours (with efficiency):", offlineInfo.hours);
+            
+            const bps = calculateBPS ? calculateBPS(OFFLINE_EFFICIENCY) : 0;
+            const mps = calculateMPS ? calculateMPS(OFFLINE_EFFICIENCY) : 0;
+            
+            // DEBUG LOGGING
+            console.log("  - BPS (Bots Per Second):", bps);
+            console.log("  - MPS (Money Per Second):", mps);
+            console.log("  - OFFLINE_EFFICIENCY:", OFFLINE_EFFICIENCY);
+
+            let cryptoMultiplier = 1;
+            if (typeof window.getCryptoMiningInstance === 'function') {
+                const cryptoInstance = window.getCryptoMiningInstance();
+                if (cryptoInstance && cryptoInstance.getBotGenerationMultiplier) {
+                    cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier();
+                }
+            }
+            
+            // DEBUG LOGGING
+            console.log("  - Crypto multiplier:", cryptoMultiplier);
+
+            const botGains = bps * offlineInfo.hours * 3600;
+            const cashGains = mps * offlineInfo.hours * 3600;
+            
+            // DEBUG LOGGING
+            console.log("  - Bot gains calculation:", bps, "*", offlineInfo.hours, "* 3600 =", botGains);
+            console.log("  - Cash gains calculation:", mps, "*", offlineInfo.hours, "* 3600 =", cashGains);
+            console.log("  - Final botGains:", botGains);
+            console.log("  - Final cashGains:", cashGains);
+
+            if (botGains > 0) {
+                game.bots.t3 = sanitizeNumber(game.bots.t3 + botGains, 0, 0);
+            }
+            
+            if (cashGains > 0) {
+                game.money = sanitizeNumber(game.money + cashGains, 0, 0);
+                game.totalEarned = sanitizeNumber(game.totalEarned + cashGains, 0, 0);
+            }
+            
+            // DEBUG LOGGING
+            console.log("  - Money before:", game.money - cashGains);
+            console.log("  - Money after:", game.money);
+
+            let eventInfo = null;
+            if (offlineInfo.eligibleHours >= OFFLINE_EVENT_MIN_HOURS) {
+                eventInfo = this.triggerOfflineEvent(offlineInfo.eligibleHours, game);
+            }
+            
+            this.createPopup();
+            this.updatePopup(offlineInfo, botGains, cashGains, eventInfo);
+            
             const now = Date.now();
             this.lastOnlineTime = now;
             this.saveState();
-            return;
+            
+        } catch (e) {
+            console.error("Error processing offline progress:", e);
         }
-        
-        const bps = calculateBPS ? calculateBPS(OFFLINE_EFFICIENCY) : 0;
-        const mps = calculateMPS ? calculateMPS(OFFLINE_EFFICIENCY) : 0;
-
-        let cryptoMultiplier = 1;
-        if (typeof window.getCryptoMiningInstance === 'function') {
-            const cryptoInstance = window.getCryptoMiningInstance();
-            if (cryptoInstance && cryptoInstance.getBotGenerationMultiplier) {
-                cryptoMultiplier = cryptoInstance.getBotGenerationMultiplier();
-            }
-        }
-
-        const botGains = bps * offlineInfo.hours * 3600;
-        const cashGains = mps * offlineInfo.hours * 3600;
-
-        if (botGains > 0) {
-            game.bots.t3 = sanitizeNumber(game.bots.t3 + botGains, 0, 0);
-        }
-        
-        if (cashGains > 0) {
-            game.money = sanitizeNumber(game.money + cashGains, 0, 0);
-            game.totalEarned = sanitizeNumber(game.totalEarned + cashGains, 0, 0);
-        }
-
-        let eventInfo = null;
-        if (offlineInfo.eligibleHours >= OFFLINE_EVENT_MIN_HOURS) {
-            eventInfo = this.triggerOfflineEvent(offlineInfo.eligibleHours, game);
-        }
-        
-        this.createPopup();
-        this.updatePopup(offlineInfo, botGains, cashGains, eventInfo);
-        
-        const now = Date.now();
-        this.lastOnlineTime = now;
-        this.saveState();
-        
-		} catch (e) {
-			console.error("Error processing offline progress:", e);
-		}
-	}
+    }
     
     triggerOfflineEvent(hoursOffline, game) {
         try {

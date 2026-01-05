@@ -362,6 +362,11 @@ window.addEventListener('load', () => {
     initUICosts();
     render();
     
+    const versionElement = document.getElementById('gameVersion');
+    if (versionElement && game.version) {
+      versionElement.textContent = game.version;
+    }
+    
     setInterval(() => {
       try {
         gameUpdate();

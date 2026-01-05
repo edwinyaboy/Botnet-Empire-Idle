@@ -51,7 +51,44 @@
 <body>
 <header>
   <h1>BOTNET EMPIRE IDLE</h1>
+  <div id="topNav">
+    <button id="profileToggleBtn" class="profile-toggle">
+      <img src="images/favicon.svg" alt="Profile">
+    </button>
+  </div>
 </header>
+<div id="profilePanel" style="display: none;" class="profile-dropdown">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <img src="images/favicon.svg" alt="Avatar">
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">ADMINISTRATOR</div>
+      <div class="profile-id">ID: <span id="profileHackerId">0000</span></div>
+    </div>
+  </div>
+  
+  <div class="dropdown-section">
+    <h4>Prestige System</h4>
+    <div class="progress-bar compact">
+      <div class="progress-fill" id="prestigeProgress"></div>
+      <div class="progress-text" id="prestigeText">0%</div>
+    </div>
+    <button class="primary compact" id="prestigeBtn">Execute Prestige Reset</button>
+    <div class="prestige-info">
+      <div>Requires: 8.2B total hacked computers</div>
+      <div>Current Bonuses: +<span id="prestigeBonus">0</span>% income</div>
+    </div>
+  </div>
+  
+  <div class="dropdown-section">
+    <h4>Data Management</h4>
+    <button class="compact" id="exportBtn">Export Save Data</button>
+    <button class="compact" id="importBtn">Import Save Data</button>
+    <button class="compact" id="tutorialBtn">Show Tutorial</button>
+    <button class="danger compact" id="resetBtn">Reset All Data</button>
+  </div>
+</div>
 <div id="eventTimer" class="event-timer" style="display:none;"></div>
 <div id="eventModal" style="display:none;"></div>
 <div id="tutorialModal" style="display:none;"></div>
@@ -139,27 +176,16 @@
     <h3>Achievement System</h3>
     <div class="scrollable" id="achievements"></div>
   </div>
-  <div class="grid">
-    <div class="panel" id="prestigePanel">
-      <h3>Prestige System</h3>
-      <div class="progress-bar">
-        <div class="progress-fill" id="prestigeProgress"></div>
-        <div class="progress-text" id="prestigeText">0%</div>
-      </div>
-      <button class="primary" id="prestigeBtn">Execute Prestige Reset</button>
-      <div style="font-size:clamp(10px, 2vw, 11px); color:#8b949e; margin-top:12px;">
-        Requires: 8.2B total hacked computers<br>
-        Current Bonuses: +<span id="prestigeBonus">0</span>% income
-      </div>
+</div>
+<footer>
+  <div class="footer-content">
+    <div class="footer-text">
+      Made with <span class="footer-heart">&#10084;</span> by Shrine
     </div>
-    <div class="panel">
-      <h3>Data Management</h3>
-      <button id="exportBtn">Export Save Data</button>
-      <button id="importBtn">Import Save Data</button>
-      <button id="tutorialBtn">Show Tutorial</button>
-      <button class="danger" id="resetBtn">Reset All Data</button>
+    <div class="footer-version">
+      Version <span id="gameVersion"></span>
     </div>
   </div>
-</div>
+</footer>
 </body>
 </html>

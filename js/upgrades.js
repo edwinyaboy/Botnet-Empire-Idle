@@ -3,14 +3,14 @@ import { tools } from './tools.js';
 
 export const upgrades = {
   buildPC:{ name:"Brand New Computer", desc:"Your first custom-built desktop for running operations", cost:500, effect:"base_bots", value:2 },
-  antenna:{ name:"External WiFi Antenna", desc:"Improves signal reach when expanding your network - Additional 5% Hacked Computers gained per click", cost:2500, effect:"click_multiplier", value:0.05 },
+  antenna:{ name:"External WiFi Antenna", desc:"Improves signal reach when expanding your network", cost:2500, effect:"click_multiplier", value:0.05 },
   ramUpgrade:{ name:"High-Speed RAM Kit", desc:"Handles more tasks at once without slowdowns", cost:5000, effect:"base_bots", value:800 },
   ssdUpgrade:{ name:"NVMe Storage Array", desc:"Faster storage speeds up payload execution", cost:20000, effect:"base_bots", value:5500 },
-  proxygambit:{ name:"ProxyGambit", desc:"Routes traffic through distant relays to expand safely - Additional 10% Hacked Computers gained per click", cost:40000, effect:"click_multiplier", value:0.10 },
+  proxygambit:{ name:"ProxyGambit", desc:"Routes traffic through distant relays to expand safely", cost:40000, effect:"click_multiplier", value:0.10 },
   osHardening:{ name:"Custom Hardened OS", desc:"Streamlined system built for automation workloads", cost:60000, effect:"base_bots", value:7500 },
   networkStack:{ name:"Optimized Network Stack", desc:"Improves data flow and long-term stability", cost:500000, effect:"base_bots", value:80000 },
   serverRack:{ name:"Dedicated Server Rack", desc:"Enterprise hardware massively boosts operations", cost:1500000, effect:"base_bots", value:150000 },
-  ai:{ name:"Autonomous Spread Controller", desc:"Smart automation improves manual expansion efficiency - Additional 25% Hacked Computers gained per click", cost:5000000, effect:"click_multiplier", value:0.25 }
+  ai:{ name:"Autonomous Spread Controller", desc:"Smart automation improves manual expansion efficiency", cost:5000000, effect:"click_multiplier", value:0.25 }
 };
 
 let purchaseInProgress = false;
