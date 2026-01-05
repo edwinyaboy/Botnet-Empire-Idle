@@ -24,19 +24,19 @@ class CryptoMining {
         this.rates = {
             low: {
                 botPenalty: 0.7,
-                baseRate: 0.0001,
+                baseRate: 0.00001,
                 volatility: 0.2,
                 riskColor: '#58a6ff'
             },
             high: {
                 botPenalty: 0.5,
-                baseRate: 0.0005,
+                baseRate: 0.00005,
                 volatility: 0.5,
                 riskColor: '#f85149'
             }
         };
         
-        this.currentRate = { low: 0.0001, high: 0.0005 };
+        this.currentRate = { low: 0.00001, high: 0.00005 };
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.createUI();
     }
@@ -250,7 +250,7 @@ class CryptoMining {
             const rateConfig = this.rates[mode];
             
             const fluctuation = (Math.random() * 2 - 1) * rateConfig.volatility;
-            this.currentRate[mode] = Math.max(0.0001, rateConfig.baseRate * (1 + fluctuation));
+            this.currentRate[mode] = Math.max(0.00001, rateConfig.baseRate * (1 + fluctuation));
             
             setTimeout(() => this.updateRates(), 30000 + Math.random() * 60000);
             

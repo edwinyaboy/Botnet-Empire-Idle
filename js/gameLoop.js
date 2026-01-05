@@ -234,8 +234,8 @@ export function calculateMPS(offlineEfficiency = 1) {
       
       const mode = cryptoInstance.state.mode;
       const rate = cryptoInstance.currentRate && cryptoInstance.currentRate[mode] 
-        ? sanitizeNumber(cryptoInstance.currentRate[mode], 0.0001, 0, 1) 
-        : 0.0001;
+        ? sanitizeNumber(cryptoInstance.currentRate[mode], 0.00001, 0, 1) 
+        : 0.00001;
       
       const cryptoMPS = totalBots * rate;
       mps += cryptoMPS * offlineEfficiency;
