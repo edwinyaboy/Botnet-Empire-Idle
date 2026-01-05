@@ -283,7 +283,6 @@ class OfflineSystem {
                 return;
             }
             
-            // DEBUG LOGGING
             console.log("DEBUG OFFLINE PROGRESS:");
             console.log("  - Offline hours:", offlineInfo.hours);
             console.log("  - Eligible hours:", offlineInfo.eligibleHours);
@@ -292,7 +291,6 @@ class OfflineSystem {
             const bps = calculateBPS ? calculateBPS(OFFLINE_EFFICIENCY) : 0;
             const mps = calculateMPS ? calculateMPS(OFFLINE_EFFICIENCY) : 0;
             
-            // DEBUG LOGGING
             console.log("  - BPS (Bots Per Second):", bps);
             console.log("  - MPS (Money Per Second):", mps);
             console.log("  - OFFLINE_EFFICIENCY:", OFFLINE_EFFICIENCY);
@@ -305,13 +303,11 @@ class OfflineSystem {
                 }
             }
             
-            // DEBUG LOGGING
             console.log("  - Crypto multiplier:", cryptoMultiplier);
 
             const botGains = bps * offlineInfo.hours * 3600;
             const cashGains = mps * offlineInfo.hours * 3600;
             
-            // DEBUG LOGGING
             console.log("  - Bot gains calculation:", bps, "*", offlineInfo.hours, "* 3600 =", botGains);
             console.log("  - Cash gains calculation:", mps, "*", offlineInfo.hours, "* 3600 =", cashGains);
             console.log("  - Final botGains:", botGains);
@@ -326,7 +322,6 @@ class OfflineSystem {
                 game.totalEarned = sanitizeNumber(game.totalEarned + cashGains, 0, 0);
             }
             
-            // DEBUG LOGGING
             console.log("  - Money before:", game.money - cashGains);
             console.log("  - Money after:", game.money);
 

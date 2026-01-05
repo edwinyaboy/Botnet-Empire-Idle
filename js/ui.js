@@ -666,9 +666,17 @@ function renderMarketplace() {
       html += `</div>`;
       
       let descText = t.desc;
-      if (t.type === "bots") descText += ` - Gains an additional ${t.base} Poor quality hacked computers per second`;
-      if (t.type === "money") descText += ` - Earns $${t.base} per second`;
-      if (t.clickable) descText += ` - Clickable`;
+
+      if (!t.clickable) {
+        if (t.type === "bots") descText += ` - Gains an additional ${t.base} Poor quality hacked computers per second`;
+        if (t.type === "money") descText += ` - Earns $${t.base} per second`;
+      }
+      
+      if (t.clickable) {
+        const clickReward = t.clickType === "bots" ? "poor quality hacked computers" : "cash";
+        descText += ` - Clickable in Control Panel for extra ${clickReward}`;
+      }
+      
       if (t.unlocks === "mobile") descText += ` - Unlocks Mobile Infrastructure`;
 
       html += `<div class="tool-desc">${descText}</div>`;
@@ -795,6 +803,10 @@ function renderToolsInterface() {
       const isOnCooldown = cd > 0;
       const cooldownWidth = isOnCooldown ? (1 - cd / (t.clickCooldown * cooldownReduction)) * 100 : 0;
 
+      const clickBonusText = t.clickType === "bots" ? 
+        t.clickBonus.toLocaleString() + " bots" : 
+        "$" + t.clickBonus.toLocaleString();
+
       html += `<div class="tool-panel ${activeClass}" data-tool-id="${id}">`;
       html += `<div style="margin-bottom:12px;">`;
       html += `<div style="font-size:clamp(11px,2.5vw,13px); font-weight:600; color:#58a6ff; margin-bottom:4px;">${t.name}</div>`;
@@ -810,7 +822,7 @@ function renderToolsInterface() {
       html += `</div>`;
       
       html += `<div style="margin-top:12px; font-size:clamp(10px,1.8vw,10px); color:#8b949e;">`;
-      html += `<div><strong>Click Bonus:</strong> ${t.type === "bots" ? t.clickBonus.toLocaleString() + " bots" : "$" + t.clickBonus.toLocaleString()}</div>`;
+      html += `<div><strong>Click Bonus:</strong> ${clickBonusText}</div>`;
       html += `<div><strong>Cooldown:</strong> ${t.clickCooldown} seconds</div>`;
       if (cooldownReduction < 1) {
         html += `<div><strong>Cooldown Reduction:</strong> ${Math.round((1 - cooldownReduction) * 100)}%</div>`;
