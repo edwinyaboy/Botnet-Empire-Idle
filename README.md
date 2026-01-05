@@ -24,12 +24,11 @@ A browser-based hacker and botnet themed idle clicker game.
 - [ ] Bug Fixes (Constantly)
 - [ ] More Random Events
 - [ ] File Crypt Cycle
-- [ ] Crypto Market
 - [ ] Breach Datacenter Minigame
 - [ ] Power Reroute Minigame
 - [ ] Cooling System Override Minigame
 - [X] Offline Progress & Offline Events
-- [X] Crypto Mining (Low/High Risk, just cash for now)
+- [X] Crypto Mining (Cash)
 - [X] Version Migration
 - [X] Player Friendly Terminology
 - [X] Slots Minigame
