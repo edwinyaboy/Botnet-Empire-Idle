@@ -69,6 +69,16 @@ function batchUpdateUI() {
   setTextContent("bps", safeInt(bps));
   setTextContent("mps", safeInt(mps));
   
+  const prestigeCircle = getElement("prestigeCircle");
+  if (prestigeCircle && prestigeCircle.textContent !== String(game.prestige)) {
+    prestigeCircle.textContent = String(game.prestige);
+  }
+  
+  const profilePrestigeLevel = getElement("profilePrestigeLevel");
+  if (profilePrestigeLevel && profilePrestigeLevel.textContent !== String(game.prestige)) {
+    profilePrestigeLevel.textContent = String(game.prestige);
+  }
+  
   if (window.slotsActive) return true;
   
   const timeLeft = Math.max(0, Math.floor((game.priceTime + PRICE_ROLL_TIME - Date.now()) / 1000));
@@ -91,15 +101,15 @@ function batchUpdateUI() {
     const s = remaining % 60;
     const eventTimer = getElement("eventTimer");
     if (eventTimer) {
-	const labelText = `${game.activeEvent.toUpperCase()} EVENT ACTIVE\n`;
-	const detailText = `${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining`;
-	const newContent = labelText + ' ' + detailText;
+      const labelText = `${game.activeEvent.toUpperCase()} EVENT ACTIVE\n`;
+      const detailText = `${game.eventEffect || ''} - ${m}:${s.toString().padStart(2, '0')} remaining`;
+      const newContent = labelText + ' ' + detailText;
   
-	if (eventTimer.textContent !== newContent) {
-		eventTimer.textContent = newContent;
-		eventTimer.style.display = "block";
-		}
-	}
+      if (eventTimer.textContent !== newContent) {
+        eventTimer.textContent = newContent;
+        eventTimer.style.display = "block";
+      }
+    }
   } else {
     const eventTimer = getElement("eventTimer");
     if (eventTimer && eventTimer.style.display !== "none") {
@@ -136,8 +146,16 @@ function setupProfileToggle() {
       hackerIdElement.textContent = hackerId;
     }
     
+    const prestigeCircle = document.getElementById('prestigeCircle');
+    if (prestigeCircle && game.prestige !== undefined) {
+      prestigeCircle.textContent = String(game.prestige);
+    }
+    
     profileBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
+      
       const isVisible = profilePanel.style.display !== 'none';
       profilePanel.style.display = isVisible ? 'none' : 'block';
       
@@ -146,12 +164,12 @@ function setupProfileToggle() {
       } else {
         profileBtn.classList.add('active');
       }
-    });
+    }, true);
     
     document.addEventListener('click', (e) => {
       if (profilePanel.style.display === 'block' && 
           !profilePanel.contains(e.target) && 
-          e.target !== profileBtn) {
+          !profileBtn.contains(e.target)) {
         profilePanel.style.display = 'none';
         profileBtn.classList.remove('active');
       }
@@ -1243,6 +1261,24 @@ export function initUICosts() {
   skillsDirty = true;
   initCryptoMiningIfNeeded();
 }
+
+function setupTitleClick() {
+  const titleHeader = document.getElementById('titleHeader');
+  if (titleHeader) {
+    titleHeader.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    
+    titleHeader.style.cursor = 'pointer';
+    titleHeader.title = 'Click to scroll to top';
+  }
+}
+
+setupProfileToggle();
+setupTitleClick();
 
 window.markSkillsDirty = () => { skillsDirty = true; };
 window.markMarketplaceDirty = () => { marketplaceDirty = true; };

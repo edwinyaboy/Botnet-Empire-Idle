@@ -11,6 +11,9 @@ body {
   touch-action: manipulation;
 }
 header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   padding:20px 30px;
   background:#161b22;
   border-bottom:1px solid #30363d;
@@ -28,12 +31,19 @@ h1 {
   letter-spacing:0.5px;
   flex: 1;
   min-width: 300px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+h1:hover {
+  color: #79c0ff;
 }
 #topNav {
   display: flex;
   gap: 10px;
   margin-top: 0;
   flex-shrink: 0;
+  position: relative;
+  z-index: 101;
 }
 #topNav button {
   width: auto;
@@ -633,7 +643,16 @@ canvas {
   border: 1px solid #30363d;
   cursor: pointer;
   transition: all 0.2s;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  z-index: 102;
+  pointer-events: auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#topNav button.profile-toggle * {
+  pointer-events: none;
 }
 
 #topNav button.profile-toggle:hover {
@@ -647,9 +666,29 @@ canvas {
 }
 
 #topNav button.profile-toggle img {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+#prestigeCircle {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f85149;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #161b22;
+  z-index: 103;
 }
 
 .profile-dropdown {
@@ -679,17 +718,15 @@ canvas {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #30363d;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 2px solid #58a6ff;
 }
 
 .profile-avatar img {
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
