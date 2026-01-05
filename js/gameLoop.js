@@ -222,6 +222,25 @@ export function calculateMPS(offlineEfficiency = 1) {
       }
     }
 
+    const cryptoInstance = getCryptoMiningInstance();
+    if (cryptoInstance && cryptoInstance.state && cryptoInstance.state.active) {
+      const totalBots = sanitizeNumber(
+        (game.bots.t1 || 0) + 
+        (game.bots.t2 || 0) + 
+        (game.bots.t3 || 0) + 
+        (game.bots.mobile || 0),
+        0, 0, MAX_SAFE_INTEGER
+      );
+      
+      const mode = cryptoInstance.state.mode;
+      const rate = cryptoInstance.currentRate && cryptoInstance.currentRate[mode] 
+        ? sanitizeNumber(cryptoInstance.currentRate[mode], 0.0001, 0, 1) 
+        : 0.0001;
+      
+      const cryptoMPS = totalBots * rate;
+      mps += cryptoMPS * offlineEfficiency;
+    }
+
     return sanitizeNumber(mps, 0, 0, MAX_SAFE_INTEGER);
   } catch (e) {
     console.error("Error in calculateMPS():", e);
